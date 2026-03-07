@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-cejop-blue: #2c46bf;
+  --color-cejop-blue-secondary: #5267c9;
+  --color-cejop-blue-light: #b7bfe7;
+  --color-cejop-blue-variant: #2d4bc1;
+  --color-cejop-dark: #1a1a2e;
+  --color-cejop-bg: #f0f2fa;
+
+  --font-montserrat: var(--font-montserrat-var);
+  --font-encode: var(--font-encode-var);
+  --font-source: var(--font-source-var);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-source-var), system-ui, sans-serif;
+  color: #1a1a2e;
+  overflow-x: hidden;
+}
+
+/* Smooth scroll overrides for Lenis */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Typography base */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-montserrat-var), sans-serif;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* Section container */
+.section-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .section-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Section padding */
+.section-pad {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+@media (min-width: 768px) {
+  .section-pad {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-pad {
+    padding-top: 9rem;
+    padding-bottom: 9rem;
+  }
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background-color: #2c46bf;
+  color: white;
+  font-family: var(--font-montserrat-var), sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  border: 2px solid #2c46bf;
+  transition: background-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #2d4bc1;
+  box-shadow: 0 10px 25px rgba(44, 70, 191, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  color: white;
+  font-family: var(--font-montserrat-var), sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  border: 2px solid white;
+  transition: background-color 0.3s, color 0.3s;
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  background-color: white;
+  color: #2c46bf;
+}
+
+/* Hero overlay */
+.hero-bg-overlay {
+  background: linear-gradient(135deg,
+      rgba(28, 40, 120, 0.82) 0%,
+      rgba(44, 70, 191, 0.65) 50%,
+      rgba(10, 15, 60, 0.88) 100%);
+}
+
+/* Selection */
+::selection {
+  background: #2c46bf;
+  color: white;
 }
