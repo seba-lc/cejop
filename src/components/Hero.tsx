@@ -41,25 +41,23 @@ export default function Hero() {
                     muted
                     loop
                     playsInline
-                    poster="https://images.pexels.com/photos/3184398/pexels-photo-3184398.jpeg"
                     className="w-full h-full object-cover"
                     aria-hidden="true"
+                    onCanPlayThrough={(e) => {
+                        // This can be used to signal the parent that video is ready
+                        const event = new CustomEvent("video-ready");
+                        window.dispatchEvent(event);
+                    }}
                 >
                     <source
-                        src="https://videos.pexels.com/video-files/3129671/3129671-uhd_2560_1440_30fps.mp4"
+                        src="https://storage.googleapis.com/marketar_bucket/cejop/video_landing.mp4"
                         type="video/mp4"
                     />
                 </video>
-                {/* Overlay */}
-                <div className="absolute inset-0 hero-bg-overlay" />
+                {/* Monochrome high-contrast overlay */}
+                <div className="absolute inset-0 bg-black/50 mix-blend-multiply" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
             </motion.div>
-
-            {/* Diagonal accent */}
-            <div
-                className="absolute bottom-0 left-0 right-0 h-32 bg-white z-10"
-                style={{ clipPath: "polygon(0 100%, 100% 100%, 100% 0)" }}
-                aria-hidden="true"
-            />
 
             {/* Content */}
             <motion.div
@@ -73,7 +71,7 @@ export default function Hero() {
                     transition={{ duration: 0.7, delay: 0.2 }}
                     className="mb-8"
                 >
-                    <span className="inline-block font-encode text-xs font-semibold tracking-[0.3em] uppercase text-cejop-blue-light border border-cejop-blue-light/40 px-4 py-1.5">
+                    <span className="inline-block font-encode text-xs font-semibold tracking-[0.4em] uppercase text-white/90 border border-white/20 px-4 py-1.5 backdrop-blur-sm bg-white/5">
                         Tucumán · 2025 · Formación Política
                     </span>
                 </motion.div>
@@ -85,14 +83,14 @@ export default function Hero() {
                             key={item.word}
                             initial={{ opacity: 0, x: i % 2 === 0 ? -60 : 60 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8, delay: 0.3 + i * 0.15, ease: "easeOut" }}
+                            transition={{ duration: 0.8, delay: 0.3 + i * 0.15, ease: [0.16, 1, 0.3, 1] }}
                             className={`flex flex-col md:flex-row md:items-end gap-2 md:gap-6 ${i % 2 === 0 ? "" : "md:pl-16 lg:pl-32"
                                 }`}
                         >
-                            <span className="font-montserrat font-black text-5xl sm:text-7xl md:text-8xl lg:text-[7rem] uppercase leading-none tracking-tight text-white">
+                            <span className="font-montserrat font-black text-5xl sm:text-7xl md:text-8xl lg:text-[7rem] uppercase leading-none tracking-tight text-white drop-shadow-2xl">
                                 {item.word}
                             </span>
-                            <span className="font-source text-sm md:text-base text-cejop-blue-light/90 md:mb-2 max-w-xs leading-relaxed">
+                            <span className="font-source text-sm md:text-base text-white/70 md:mb-2 max-w-xs leading-relaxed">
                                 {item.desc}
                             </span>
                         </motion.div>
@@ -111,7 +109,7 @@ export default function Hero() {
                             const el = document.querySelector("#inscripcion");
                             if (el) el.scrollIntoView({ behavior: "smooth" });
                         }}
-                        className="btn-primary text-sm px-8 py-4"
+                        className="btn-primary-bw text-sm px-8 py-4"
                         aria-label="Inscribite al programa CEJOP Tucumán"
                     >
                         Quiero ser parte
@@ -121,7 +119,7 @@ export default function Hero() {
                             const el = document.querySelector("#programa");
                             if (el) el.scrollIntoView({ behavior: "smooth" });
                         }}
-                        className="btn-outline text-sm px-8 py-4"
+                        className="btn-outline-bw text-sm px-8 py-4"
                         aria-label="Conocé el programa de CEJOP"
                     >
                         Conocé el programa
@@ -134,10 +132,10 @@ export default function Hero() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1.5 }}
                     onClick={handleScroll}
-                    className="mt-16 flex flex-col items-center gap-2 text-white/40 hover:text-white/70 transition-colors self-start"
+                    className="mt-16 flex flex-col items-center gap-2 text-white/60 hover:text-white transition-colors self-start"
                     aria-label="Desplazarse hacia abajo"
                 >
-                    <span className="font-encode text-xs tracking-widest uppercase">Explorá</span>
+                    <span className="font-encode text-xs tracking-[0.3em] uppercase">Explorá</span>
                     <motion.div
                         animate={{ y: [0, 8, 0] }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
