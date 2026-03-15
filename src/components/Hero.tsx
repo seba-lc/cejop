@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+
+const VIDEO_URL = "https://storage.googleapis.com/marketar_bucket/cejop/video_landing.mp4";
+const CACHE_NAME = "cejop-media-cache";
 
 const heroWords = [
     { word: "ENTENDÉ", desc: "Cómo funciona realmente el Estado, la política y las instituciones." },
@@ -13,12 +16,57 @@ const heroWords = [
 
 export default function Hero() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [videoSrc, setVideoSrc] = useState<string>(VIDEO_URL);
+    const [isCached, setIsCached] = useState(false);
+    
+    // Dynamic year
+    const currentYear = new Date().getFullYear();
+
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end start"],
     });
     const videoOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
     const textY = useTransform(scrollYProgress, [0, 0.5], [0, -60]);
+
+    // Video caching logic
+    useEffect(() => {
+        const handleCaching = async () => {
+            if (!("caches" in window)) return;
+
+            try {
+                const cache = await caches.open(CACHE_NAME);
+                const cachedResponse = await cache.match(VIDEO_URL);
+
+                if (cachedResponse) {
+                    const blob = await cachedResponse.blob();
+                    const localUrl = URL.createObjectURL(blob);
+                    setVideoSrc(localUrl);
+                    setIsCached(true);
+                    console.log("Serving video from cache");
+                    
+                    // Signal ready since it's instant
+                    window.dispatchEvent(new CustomEvent("video-ready"));
+                } else {
+                    // Not in cache, download and store
+                    const response = await fetch(VIDEO_URL);
+                    if (response.ok) {
+                        const responseClone = response.clone();
+                        cache.put(VIDEO_URL, responseClone);
+                        
+                        const blob = await response.blob();
+                        const localUrl = URL.createObjectURL(blob);
+                        setVideoSrc(localUrl);
+                        console.log("Cached and serving video");
+                    }
+                }
+            } catch (error) {
+                console.error("Video caching failed:", error);
+            }
+        };
+
+        handleCaching();
+    }, []);
 
     const handleScroll = () => {
         const next = document.querySelector("#problema");
@@ -37,20 +85,19 @@ export default function Hero() {
                 style={{ opacity: videoOpacity }}
             >
                 <video
+                    key={videoSrc} // Force re-render when switching to local URL
                     autoPlay
                     muted
                     loop
                     playsInline
                     className="w-full h-full object-cover"
                     aria-hidden="true"
-                    onCanPlayThrough={(e) => {
-                        // This can be used to signal the parent that video is ready
-                        const event = new CustomEvent("video-ready");
-                        window.dispatchEvent(event);
+                    onCanPlayThrough={() => {
+                        window.dispatchEvent(new CustomEvent("video-ready"));
                     }}
                 >
                     <source
-                        src="https://storage.googleapis.com/marketar_bucket/cejop/video_landing.mp4"
+                        src={videoSrc}
                         type="video/mp4"
                     />
                 </video>
@@ -72,7 +119,7 @@ export default function Hero() {
                     className="mb-8"
                 >
                     <span className="inline-block font-encode text-xs font-semibold tracking-[0.4em] uppercase text-white/90 border border-white/20 px-4 py-1.5 backdrop-blur-sm bg-white/5">
-                        Tucumán · 2025 · Formación Política
+                        Tucumán · {currentYear} · Formación Política
                     </span>
                 </motion.div>
 

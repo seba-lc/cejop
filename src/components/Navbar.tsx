@@ -4,12 +4,16 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
+import Image from "next/image";
+import brandLogo from "@/assets/cejob_brand.png";
+
 const navLinks = [
     { label: "El Programa", href: "#programa" },
     { label: "Beneficios", href: "#beneficios" },
     { label: "Cómo funciona", href: "#como-funciona" },
     { label: "FAQ", href: "#faq" },
 ];
+
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
@@ -30,54 +34,55 @@ export default function Navbar() {
     return (
         <>
             <motion.header
-                initial={{ y: -80, opacity: 0 }}
+                initial={{ y: -100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
-                        ? "bg-cejop-dark/95 backdrop-blur-md shadow-xl shadow-black/20"
-                        : "bg-transparent"
-                    }`}
+                transition={{ duration: 0.8, ease: "circOut" }}
+                className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
             >
-                <div className="section-container">
-                    <div className="flex items-center justify-between h-16 md:h-20">
+                <div className="section-container flex justify-center py-4 transition-all duration-500">
+                    <div
+                        className={`pointer-events-auto flex items-center justify-between transition-all duration-500 px-6 sm:px-10 rounded-full border border-transparent ${scrolled
+                                ? "w-full max-w-6xl bg-cejop-dark/60 backdrop-blur-2xl shadow-2xl shadow-black/40 border-white/5 py-1"
+                                : "w-full bg-transparent py-4 md:py-6"
+                            }`}
+                    >
                         {/* Logo */}
                         <a
                             href="#"
-                            className="flex items-center gap-3 group"
+                            className="flex items-center group shrink-0"
                             aria-label="CEJOP Tucumán - Inicio"
                         >
-                            <div className="w-9 h-9 bg-cejop-blue flex items-center justify-center transition-transform group-hover:scale-105">
-                                <span className="font-montserrat font-black text-white text-xs leading-none tracking-tighter">
-                                    CEJ
-                                    <br />
-                                    OP
-                                </span>
-                            </div>
-                            <div className="hidden sm:block">
-                                <span className="font-montserrat font-bold text-white text-lg leading-tight tracking-tight">
-                                    CEJOP
-                                </span>
-                                <span className="block font-encode text-cejop-blue-light text-xs tracking-widest uppercase">
-                                    Tucumán
-                                </span>
+                            <div className={`relative transition-all duration-500 group-hover:scale-105 ${scrolled
+                                    ? "w-48 h-12 md:w-64 md:h-16"
+                                    : "w-72 h-32 md:w-[34rem] md:h-48"
+                                }`}>
+                                <Image
+                                    src={brandLogo}
+                                    alt="CEJOP Tucumán"
+                                    fill
+                                    className="object-contain object-left"
+                                    priority
+                                />
                             </div>
                         </a>
 
                         {/* Desktop nav */}
-                        <nav className="hidden md:flex items-center gap-8" aria-label="Navegación principal">
+                        <nav className="hidden md:flex items-center gap-10" aria-label="Navegación principal">
                             {navLinks.map((link) => (
                                 <button
                                     key={link.href}
                                     onClick={() => handleLink(link.href)}
-                                    className="font-encode text-sm font-medium text-white/80 hover:text-white tracking-wide uppercase transition-colors duration-200 relative group"
+                                    className={`font-encode text-[11px] font-bold tracking-[0.2em] uppercase transition-all duration-300 relative group ${scrolled ? "text-white/70 hover:text-white" : "text-white/40 hover:text-white"
+                                        }`}
                                 >
                                     {link.label}
-                                    <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-cejop-blue-light transition-all duration-300 group-hover:w-full" />
+                                    <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-cejop-blue-light transition-all duration-300 group-hover:w-full" />
                                 </button>
                             ))}
                             <button
                                 onClick={() => handleLink("#inscripcion")}
-                                className="btn-primary text-xs px-5 py-2.5"
+                                className={`btn-primary px-6 py-2 transition-all duration-500 ${scrolled ? "text-[10px] scale-95" : "text-xs"
+                                    }`}
                                 aria-label="Inscribite al programa CEJOP"
                             >
                                 Sumate
