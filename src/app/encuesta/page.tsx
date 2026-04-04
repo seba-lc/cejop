@@ -485,6 +485,7 @@ export default function EncuestaPage() {
                             label="Teléfono"
                             name="telefono"
                             type="tel"
+                            inputMode="tel"
                             value={form.telefono}
                             onChange={handleChange}
                             placeholder="381 ..."
@@ -503,7 +504,8 @@ export default function EncuestaPage() {
                             <Field
                               label="Edad"
                               name="edad"
-                              type="number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
                               value={form.edad}
                               onChange={handleChange}
                               placeholder="18–30"
@@ -911,6 +913,8 @@ function Field({
   onChange,
   placeholder,
   type = "text",
+  inputMode,
+  pattern,
   required,
 }: {
   label: string;
@@ -919,6 +923,8 @@ function Field({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder: string;
   type?: string;
+  inputMode?: "numeric" | "tel" | "email" | "text";
+  pattern?: string;
   required?: boolean;
 }) {
   return (
@@ -934,6 +940,8 @@ function Field({
         id={name}
         name={name}
         type={type}
+        inputMode={inputMode}
+        pattern={pattern}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
