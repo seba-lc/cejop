@@ -151,16 +151,13 @@ export default function Hero() {
                     transition={{ duration: 0.7, delay: 1 }}
                     className="mt-12 flex flex-col sm:flex-row gap-4"
                 >
-                    <button
-                        onClick={() => {
-                            const el = document.querySelector("#inscripcion");
-                            if (el) el.scrollIntoView({ behavior: "smooth" });
-                        }}
+                    <a
+                        href="/encuesta"
                         className="btn-primary-bw text-sm px-8 py-4"
                         aria-label="Inscribite al programa CEJOP Tucumán"
                     >
-                        Quiero ser parte
-                    </button>
+                        Inscribite en la primera charla
+                    </a>
                     <button
                         onClick={() => {
                             const el = document.querySelector("#programa");

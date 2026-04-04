@@ -14,6 +14,7 @@ import FAQ from "@/components/FAQ";
 import CTAForm from "@/components/CTAForm";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
+import FloatingCTA from "@/components/FloatingCTA";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export default function Home() {
         </main>
         <Footer />
       </SmoothScroll>
+      <FloatingCTA />
     </>
   );
 }

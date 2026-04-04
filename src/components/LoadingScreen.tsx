@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import brandLogo from "@/assets/cejob_brand.png";
+import brandLogo from "@/assets/cejop_brand_cropped.png";
 
 export default function LoadingScreen() {
     const [isVisible, setIsVisible] = useState(true);
@@ -29,6 +29,7 @@ export default function LoadingScreen() {
                         src={brandLogo}
                         alt="CEJOP Logo"
                         fill
+                        sizes="96px"
                         className="object-contain"
                         priority
                     />

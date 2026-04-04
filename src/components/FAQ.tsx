@@ -126,10 +126,10 @@ export default function FAQ() {
                         >
                             ¿Todavía tenés dudas? Escribinos a{" "}
                             <a
-                                href="mailto:contacto@cejoptucuman.org"
+                                href="mailto:cejoptucuman@gmail.com"
                                 className="text-cejop-blue hover:underline font-medium"
                             >
-                                contacto@cejoptucuman.org
+                                cejoptucuman@gmail.com
                             </a>
                             . Contestamos todos los mensajes.
                         </motion.p>
