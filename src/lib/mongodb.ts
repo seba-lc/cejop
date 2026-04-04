@@ -1,31 +1,34 @@
-import { MongoClient } from "mongodb";
-
-const uri = process.env.MONGODB_URI!;
-const options = {};
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+import { MongoClient, type Db } from "mongodb";
 
 declare global {
   // eslint-disable-next-line no-var
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
+  var _mongoClient: MongoClient | undefined;
 }
 
-if (process.env.NODE_ENV === "development") {
-  // Reuse client in dev to avoid exhausting connections with HMR
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+let cachedClient: MongoClient | null = null;
+
+function getClient(): MongoClient {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("MONGODB_URI environment variable is not set");
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+
+  if (process.env.NODE_ENV === "development") {
+    if (!global._mongoClient) {
+      global._mongoClient = new MongoClient(uri);
+    }
+    return global._mongoClient;
+  }
+
+  if (!cachedClient) {
+    cachedClient = new MongoClient(uri);
+  }
+  return cachedClient;
 }
 
-export function getDbName(): string {
+export async function getDb(): Promise<Db> {
+  const client = getClient();
+  await client.connect();
   const suffix = process.env.MONGODB_DB_SUFFIX || "production";
-  return `cejop_${suffix}`;
+  return client.db(`cejop_${suffix}`);
 }
-
-export default clientPromise;

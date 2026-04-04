@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import clientPromise, { getDbName } from "@/lib/mongodb";
+import { getDb } from "@/lib/mongodb";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,8 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = await clientPromise;
-    const db = client.db(getDbName());
+    const db = await getDb();
     const collection = db.collection("encuestas");
 
     // Check for existing submission by email or phone
