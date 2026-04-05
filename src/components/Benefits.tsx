@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
+import { trackScrollSection } from "@/lib/analytics";
 
 const benefits = [
   {
@@ -45,6 +46,7 @@ const benefits = [
 export default function Benefits() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  useEffect(() => { if (inView) trackScrollSection("que-te-llevas"); }, [inView]);
 
   return (
     <section

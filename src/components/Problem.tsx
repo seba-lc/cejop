@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView, type Variants } from "framer-motion";
+import { trackScrollSection } from "@/lib/analytics";
 import Image from "next/image";
 
 export default function Problem() {
     const ref = useRef<HTMLElement>(null);
     const inView = useInView(ref, { once: true, margin: "-100px" });
+    useEffect(() => { if (inView) trackScrollSection("problema"); }, [inView]);
 
     const fadeUp: Variants = {
         hidden: { opacity: 0, y: 50 },

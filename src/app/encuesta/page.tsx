@@ -14,6 +14,13 @@ import {
 import Image from "next/image";
 import brandLogo from "@/assets/cejop_brand_cropped.png";
 import { markEncuestaCompleted, isEncuestaCompleted } from "@/components/SurveyGate";
+import {
+  trackEncuestaStart,
+  trackEncuestaStep,
+  trackEncuestaSubmit,
+  trackEncuestaDuplicate,
+  trackEncuestaBlocked,
+} from "@/lib/analytics";
 
 const VIDEO_URL =
   "https://storage.googleapis.com/marketar_bucket/cejop/video_landing.mp4";
@@ -143,7 +150,10 @@ export default function EncuestaPage() {
     fetch("/api/encuesta/status")
       .then((r) => r.json())
       .then((data) => {
-        if (!data.habilitada) setEncuestaCerrada(true);
+        if (!data.habilitada) {
+          setEncuestaCerrada(true);
+          trackEncuestaBlocked();
+        }
       })
       .catch(() => {});
   }, []);
@@ -228,6 +238,9 @@ export default function EncuestaPage() {
   const next = () => {
     if (!canAdvance()) return;
     if (currentStep < steps.length - 1) {
+      const nextStep = currentStep + 1;
+      if (currentStep === 0) trackEncuestaStart();
+      else trackEncuestaStep(currentStep, steps[currentStep].id);
       setDirection(1);
       setCurrentStep((s) => s + 1);
     }
@@ -275,6 +288,7 @@ export default function EncuestaPage() {
       const data = await res.json();
 
       if (res.status === 409 && data.duplicate) {
+        trackEncuestaDuplicate();
         setDuplicateMessage(data.message);
         setCookie(COOKIE_NAME, form.mail.trim(), 90);
         markEncuestaCompleted();
@@ -285,6 +299,7 @@ export default function EncuestaPage() {
         throw new Error(data.error || "Error al enviar");
       }
 
+      trackEncuestaSubmit();
       setCookie(COOKIE_NAME, form.mail.trim(), 90);
       markEncuestaCompleted();
       setSubmitted(true);

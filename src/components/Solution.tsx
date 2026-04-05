@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { Users, Globe, BookOpen, Heart } from "lucide-react";
+import { trackScrollSection } from "@/lib/analytics";
 
 const values = [
   {
@@ -34,6 +35,7 @@ const values = [
 export default function Solution() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  useEffect(() => { if (inView) trackScrollSection("solucion"); }, [inView]);
 
   return (
     <section

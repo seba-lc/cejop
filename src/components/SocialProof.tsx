@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import Image from "next/image";
+import { trackScrollSection } from "@/lib/analytics";
 import imgGrupo from "@/assets/social-grupo-dialogo.jpg";
 import imgMarra from "@/assets/social-marra-clase.jpg";
 import imgPresentacion from "@/assets/social-presentacion-cejop.jpg";
@@ -23,6 +24,7 @@ const photos = [
 export default function SocialProof() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  useEffect(() => { if (inView) trackScrollSection("social-proof"); }, [inView]);
 
   return (
     <section

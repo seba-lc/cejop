@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { trackFaqOpen, trackScrollSection } from "@/lib/analytics";
 
 const faqs = [
     {
@@ -46,7 +47,7 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
             className="border-b border-gray-200 last:border-none"
         >
             <button
-                onClick={() => setOpen(!open)}
+                onClick={() => { if (!open) trackFaqOpen(q); setOpen(!open); }}
                 className="w-full flex items-start justify-between gap-4 py-6 text-left group"
                 aria-expanded={open}
                 aria-controls={`faq-answer-${index}`}
@@ -87,6 +88,7 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
 export default function FAQ() {
     const ref = useRef<HTMLElement>(null);
     const inView = useInView(ref, { once: true, margin: "-80px" });
+    useEffect(() => { if (inView) trackScrollSection("faq"); }, [inView]);
 
     return (
         <section

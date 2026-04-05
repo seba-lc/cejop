@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { trackScrollSection } from "@/lib/analytics";
 
 export default function CTAForm() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  useEffect(() => { if (inView) trackScrollSection("cta-final"); }, [inView]);
 
   return (
     <section

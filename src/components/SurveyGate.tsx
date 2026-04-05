@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, CalendarDays, Ticket } from "lucide-react";
+import { trackCtaClick, trackEncuestaBlocked } from "@/lib/analytics";
 
 const LS_KEY = "cejop_encuesta_completada";
 
@@ -50,6 +51,15 @@ export default function SurveyGate({
 
       if (!anchor && !button) return;
 
+      // Identify which CTA was clicked
+      const el = (anchor || button) as HTMLElement;
+      const section = el.closest("section")?.id
+        || el.closest("header")?.tagName && "navbar"
+        || el.closest("[class*='fixed']") && "floating"
+        || "unknown";
+      const label = el.textContent?.trim().slice(0, 30) || section;
+      trackCtaClick(label);
+
       // Check localStorage first
       if (isEncuestaCompleted()) {
         e.preventDefault();
@@ -62,6 +72,7 @@ export default function SurveyGate({
       if (statusFetched.current && !encuestaHabilitada.current) {
         e.preventDefault();
         e.stopPropagation();
+        trackEncuestaBlocked();
         setModal("cerrada");
         return;
       }

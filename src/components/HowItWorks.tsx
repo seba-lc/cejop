@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import Image from "next/image";
+import { trackScrollSection } from "@/lib/analytics";
 import timelineImg from "@/assets/timeline-mesa-cejop.png";
 
 const steps = [
@@ -20,6 +21,7 @@ const steps = [
 export default function HowItWorks() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  useEffect(() => { if (inView) trackScrollSection("como-funciona"); }, [inView]);
 
   return (
     <section
