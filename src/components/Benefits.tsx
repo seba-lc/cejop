@@ -48,7 +48,7 @@ export default function Benefits() {
 
   return (
     <section
-      id="beneficios"
+      id="que-te-llevas"
       ref={ref}
       className="section-pad bg-cejop-bg overflow-hidden"
       aria-labelledby="benefits-title"

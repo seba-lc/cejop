@@ -57,9 +57,9 @@ export default function HowItWorks() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="font-source text-base text-gray-600 leading-relaxed mb-12"
             >
-              Programa anual (abril–diciembre) con una cohorte limitada de
-              jóvenes. No es solo charlas: es una experiencia formativa que
-              mezcla profundidad, práctica y comunidad.
+              Programa anual (abril–diciembre). No es solo charlas: es una
+              experiencia formativa que mezcla profundidad, práctica y
+              comunidad.
             </motion.p>
 
             {/* Timeline */}
@@ -98,6 +98,12 @@ export default function HowItWorks() {
                 ))}
               </div>
             </div>
+
+            <p className="font-source text-xs text-gray-400 mt-8 italic">
+              El cronograma es orientativo. El orden de los encuentros y las
+              fechas pueden ajustarse según la dinámica del programa y la
+              disponibilidad de los expositores.
+            </p>
           </div>
 
           {/* Right: Image + callout */}

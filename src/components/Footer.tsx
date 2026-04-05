@@ -11,7 +11,7 @@ const socials = [
 
 const footerLinks = [
   { label: "El Programa", href: "#programa" },
-  { label: "Beneficios", href: "#beneficios" },
+  { label: "Qué te llevás", href: "#que-te-llevas" },
   { label: "Cómo funciona", href: "#como-funciona" },
   { label: "FAQ", href: "#faq" },
   { label: "Inscripción", href: "#inscripcion" },

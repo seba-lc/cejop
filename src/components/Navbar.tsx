@@ -8,7 +8,7 @@ import brandLogo from "@/assets/cejop_brand_cropped.png";
 
 const navLinks = [
   { label: "El Programa", href: "#programa" },
-  { label: "Beneficios", href: "#beneficios" },
+  { label: "Qué te llevás", href: "#que-te-llevas" },
   { label: "Cómo funciona", href: "#como-funciona" },
   { label: "FAQ", href: "#faq" },
 ];

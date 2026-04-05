@@ -3,6 +3,18 @@ import { getDb } from "@/lib/mongodb";
 
 export async function POST(req: NextRequest) {
   try {
+    // Check if surveys are enabled
+    const db = await getDb();
+    const setting = await db
+      .collection("settings")
+      .findOne({ key: "encuestas_habilitadas" });
+    if (setting && setting.value === false) {
+      return NextResponse.json(
+        { error: "Las encuestas están cerradas en este momento" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
 
     // Basic validation
@@ -27,7 +39,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const db = await getDb();
     const collection = db.collection("encuestas");
 
     // Check for existing submission by email or phone

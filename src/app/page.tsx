@@ -15,6 +15,7 @@ import CTAForm from "@/components/CTAForm";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
 import FloatingCTA from "@/components/FloatingCTA";
+import SurveyGate from "@/components/SurveyGate";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,7 @@ export default function Home() {
   }, []);
 
   return (
-    <>
+    <SurveyGate>
       <AnimatePresence>
         {loading && <LoadingScreen key="loading" />}
       </AnimatePresence>
@@ -59,6 +60,6 @@ export default function Home() {
         <Footer />
       </SmoothScroll>
       <FloatingCTA />
-    </>
+    </SurveyGate>
   );
 }
