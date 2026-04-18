@@ -1447,10 +1447,10 @@ function TabConfirmados() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10">
-                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                <th className="text-left px-4 sm:px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
                   Nombre
                 </th>
-                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
                   Email
                 </th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
@@ -1459,8 +1459,9 @@ function TabConfirmados() {
                 <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
                   Teléfono
                 </th>
-                <th className="text-right px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
-                  Confirmado
+                <th className="text-right px-4 sm:px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  <span className="hidden sm:inline">Confirmado</span>
+                  <span className="sm:hidden">OK</span>
                 </th>
               </tr>
             </thead>
@@ -1470,17 +1471,29 @@ function TabConfirmados() {
                   key={it.id}
                   className="border-b border-white/5 hover:bg-white/5 transition-colors"
                 >
-                  <td className="px-6 py-4 font-medium text-white">
-                    {it.nombre || "—"}
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-white">
+                    <div>{it.nombre || "—"}</div>
+                    {/* Subtitle solo mobile con email + localidad */}
+                    <div className="md:hidden text-xs text-gray-500 font-normal mt-0.5 truncate">
+                      {it.mail}
+                    </div>
+                    {it.localidad && (
+                      <div className="md:hidden text-[11px] text-gray-500 font-normal mt-0.5">
+                        {it.localidad}
+                        {it.telefono && ` · ${it.telefono}`}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-gray-400">{it.mail}</td>
+                  <td className="px-6 py-4 text-gray-400 hidden md:table-cell">
+                    {it.mail}
+                  </td>
                   <td className="px-6 py-4 text-gray-400 hidden md:table-cell">
                     {it.localidad || "—"}
                   </td>
                   <td className="px-6 py-4 text-gray-400 hidden md:table-cell">
                     {it.telefono || "—"}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-right align-top">
                     <button
                       onClick={() => toggleConfirmacion(it.mail, !it.confirmado)}
                       disabled={updatingMail === it.mail}
@@ -1735,8 +1748,24 @@ function TabEmailsLog() {
                         setExpandedId(expanded ? null : it.id)
                       }
                     >
-                      <td className="px-6 py-3 font-medium text-white">
-                        {it.mail}
+                      <td className="px-4 sm:px-6 py-3 font-medium text-white">
+                        <div className="truncate">{it.mail}</div>
+                        {/* Mobile-only badge de campaña + fecha corta */}
+                        <div className="md:hidden flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-cejop-blue/20 text-cejop-blue">
+                            {it.campaignLabel}
+                          </span>
+                          {it.sentAt && (
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(it.sentAt).toLocaleDateString("es-AR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-3 text-gray-400 hidden md:table-cell">
                         <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-cejop-blue/20 text-cejop-blue">
@@ -1754,7 +1783,7 @@ function TabEmailsLog() {
                             })
                           : "—"}
                       </td>
-                      <td className="px-6 py-3 text-right">
+                      <td className="px-4 sm:px-6 py-3 text-right align-top">
                         {it.status === "sent" ? (
                           <span className="text-green-400 text-xs font-semibold">
                             Enviado
@@ -1765,7 +1794,7 @@ function TabEmailsLog() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 sm:px-4 py-3 align-top">
                         {hasDetail &&
                           (expanded ? (
                             <ChevronUp size={14} className="text-gray-500" />
