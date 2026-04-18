@@ -213,7 +213,7 @@ export default function AcreditacionPage() {
   }
 
   return (
-    <main className="relative min-h-[100dvh] flex flex-col bg-cejop-dark overflow-hidden">
+    <main className="relative min-h-dvh w-full flex flex-col bg-cejop-dark overflow-x-hidden">
       {/* Video background */}
       <div className="absolute inset-0 z-0">
         <video
@@ -312,7 +312,7 @@ export default function AcreditacionPage() {
                         if (e.key === "Enter" && isValidInput) lookup();
                       }}
                       placeholder="3813030000"
-                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[17px] tracking-wide focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-lg tracking-wide focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
                     />
                   </div>
                 ) : (
@@ -334,7 +334,7 @@ export default function AcreditacionPage() {
                         if (e.key === "Enter" && isValidInput) lookup();
                       }}
                       placeholder="tu@email.com"
-                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[15px] focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-base focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
                     />
                   </div>
                 )}
@@ -678,7 +678,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[15px] focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+        className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-base focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
       />
     </div>
   );
