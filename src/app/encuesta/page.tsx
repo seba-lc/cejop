@@ -7,9 +7,6 @@ import {
   ArrowLeft,
   CheckCircle,
   ChevronDown,
-  CalendarDays,
-  MapPin,
-  Ticket,
 } from "lucide-react";
 import Image from "next/image";
 import brandLogo from "@/assets/cejop_brand_cropped.png";
@@ -364,45 +361,33 @@ export default function EncuestaPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-12"
               >
-                <CalendarDays
-                  size={56}
-                  className="text-cejop-blue-light mx-auto mb-6"
-                />
-                <h2 className="font-montserrat font-black text-2xl sm:text-3xl text-white mb-4">
-                  Las inscripciones se abren pronto
+                <span className="inline-block font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3">
+                  CEJOP Tucumán
+                </span>
+
+                <h2 className="font-montserrat font-black text-2xl sm:text-3xl text-white mb-5 leading-tight">
+                  Las inscripciones ya están cerradas
                 </h2>
-                <p className="font-source text-white/80 text-base leading-relaxed max-w-sm mx-auto mb-6">
-                  El proceso de inscripción para el primer grupo de CEJOP
-                  Tucumán todavía no está activo. Seguinos en redes para
-                  enterarte apenas se habilite.
+
+                <p className="font-source text-white/80 text-[15px] leading-relaxed max-w-sm mx-auto mb-5">
+                  El primer encuentro completó su cupo. Pero esto recién
+                  arranca — el CEJOP es un año entero de formación con los
+                  que toman las decisiones reales en Tucumán y en el país.
                 </p>
 
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 mb-6 text-left space-y-3 max-w-sm mx-auto">
-                  <h3 className="font-montserrat font-semibold text-white text-sm">
-                    Primer encuentro
-                  </h3>
-                  <div className="flex items-center gap-3 text-sm text-white/70">
-                    <CalendarDays size={16} className="text-cejop-blue-light flex-shrink-0" />
-                    <span>Viernes 18 de abril, 2026</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-white/70">
-                    <MapPin size={16} className="text-cejop-blue-light flex-shrink-0" />
-                    <span>Alcurnia: 25 de mayo 760, SMT</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-white/70">
-                    <Ticket size={16} className="text-cejop-blue-light flex-shrink-0" />
-                    <span className="font-semibold text-white">Entrada gratuita</span>
-                  </div>
-                </div>
+                <p className="font-source text-white/60 text-[14px] leading-relaxed max-w-sm mx-auto mb-8">
+                  Seguinos en Instagram para enterarte cuándo abre la
+                  próxima convocatoria.
+                </p>
 
                 <a
                   href="https://www.instagram.com/cejoptucuman"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white/50 hover:bg-white/20 hover:text-white transition-colors"
+                  className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors"
                   aria-label="Seguinos en Instagram"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
                   </svg>
                 </a>
