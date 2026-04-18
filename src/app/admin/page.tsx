@@ -16,6 +16,7 @@ import {
   MessageSquare,
   ClipboardList,
   CalendarDays,
+  CheckCircle2,
 } from "lucide-react";
 import {
   BarChart,
@@ -68,6 +69,7 @@ const PIE_COLORS = [
 
 const TABS = [
   { id: "panel", label: "Panel", icon: BarChart3 },
+  { id: "confirmados", label: "Confirmados", icon: CheckCircle2 },
   { id: "prioridades", label: "Prioridades", icon: ClipboardList },
   { id: "dirigentes", label: "Dirigentes", icon: UserCheck },
   { id: "demografia", label: "Demografía", icon: MapPin },
@@ -354,6 +356,7 @@ export default function AdminDashboard() {
             encuestas={encuestas}
           />
         )}
+        {activeTab === "confirmados" && <TabConfirmados />}
         {activeTab === "prioridades" && (
           <TabPrioridades
             allPriorities={allPriorities}
@@ -1269,6 +1272,245 @@ function DirigenteItem({
           <span className="text-gray-500"> — {data.porque}</span>
         )}
       </p>
+    </div>
+  );
+}
+
+/* ── Tab: Confirmados ── */
+
+type ConfirmacionItem = {
+  id: string;
+  mail: string;
+  nombre: string;
+  telefono: string;
+  edad: number | null;
+  localidad: string;
+  createdAt: string | null;
+  confirmado: boolean;
+  confirmadoAt: string | null;
+};
+
+type ConfirmacionFilter = "all" | "confirmed" | "unconfirmed";
+
+function TabConfirmados() {
+  const [items, setItems] = useState<ConfirmacionItem[]>([]);
+  const [totalInscriptos, setTotalInscriptos] = useState(0);
+  const [totalConfirmados, setTotalConfirmados] = useState(0);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<ConfirmacionFilter>("all");
+  const [loading, setLoading] = useState(true);
+  const [updatingMail, setUpdatingMail] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (filter !== "all") params.set("filter", filter);
+
+    const res = await fetch(`/api/admin/confirmaciones?${params}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setItems(data.items || []);
+    setTotalInscriptos(data.stats?.totalInscriptos || 0);
+    setTotalConfirmados(data.stats?.totalConfirmados || 0);
+  }, [search, filter]);
+
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
+
+  async function toggleConfirmacion(mail: string, next: boolean) {
+    setUpdatingMail(mail);
+    // Optimistic update
+    setItems((prev) =>
+      prev.map((it) =>
+        it.mail === mail ? { ...it, confirmado: next } : it
+      )
+    );
+    setTotalConfirmados((prev) => prev + (next ? 1 : -1));
+
+    const res = await fetch("/api/admin/confirmaciones", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mail, confirmado: next }),
+    });
+
+    if (!res.ok) {
+      // Revert
+      setItems((prev) =>
+        prev.map((it) =>
+          it.mail === mail ? { ...it, confirmado: !next } : it
+        )
+      );
+      setTotalConfirmados((prev) => prev - (next ? 1 : -1));
+    }
+    setUpdatingMail(null);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-cejop-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const disponibles = totalInscriptos - totalConfirmados;
+
+  return (
+    <div className="space-y-6">
+      <SectionTitle>Confirmados — Primer encuentro</SectionTitle>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Users size={16} className="text-cejop-blue" />
+            <span className="text-sm text-gray-400 font-medium">
+              Inscriptos
+            </span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {totalInscriptos}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 size={16} className="text-green-400" />
+            <span className="text-sm text-gray-400 font-medium">
+              Confirmados
+            </span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {totalConfirmados}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList size={16} className="text-yellow-400" />
+            <span className="text-sm text-gray-400 font-medium">
+              Sin confirmar
+            </span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {disponibles}
+          </p>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-center">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, email o localidad..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cejop-blue transition-colors"
+            />
+          </div>
+          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
+            {(
+              [
+                { id: "all", label: "Todos" },
+                { id: "confirmed", label: "Confirmados" },
+                { id: "unconfirmed", label: "Sin confirmar" },
+              ] as { id: ConfirmacionFilter; label: string }[]
+            ).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                  filter === f.id
+                    ? "bg-cejop-blue text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* List */}
+      <Card className="!p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
+                  Localidad
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
+                  Teléfono
+                </th>
+                <th className="text-right px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  Confirmado
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((it) => (
+                <tr
+                  key={it.id}
+                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                >
+                  <td className="px-6 py-4 font-medium text-white">
+                    {it.nombre || "—"}
+                  </td>
+                  <td className="px-6 py-4 text-gray-400">{it.mail}</td>
+                  <td className="px-6 py-4 text-gray-400 hidden md:table-cell">
+                    {it.localidad || "—"}
+                  </td>
+                  <td className="px-6 py-4 text-gray-400 hidden md:table-cell">
+                    {it.telefono || "—"}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => toggleConfirmacion(it.mail, !it.confirmado)}
+                      disabled={updatingMail === it.mail}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${
+                        it.confirmado ? "bg-green-500" : "bg-gray-600"
+                      } ${updatingMail === it.mail ? "opacity-60" : ""}`}
+                      aria-label={
+                        it.confirmado
+                          ? "Quitar confirmación"
+                          : "Confirmar participación"
+                      }
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                          it.confirmado ? "translate-x-6" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center py-12 text-gray-500">
+                    {search || filter !== "all"
+                      ? "No hay resultados con esos filtros"
+                      : "No hay inscriptos todavía"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
