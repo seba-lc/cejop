@@ -28,6 +28,7 @@ type FormData = {
   proximoTemas: string[];
   proximoOtro: string;
   recomendaria: "si" | "talvez" | "no" | null;
+  origenPolitico: string;
 };
 
 const initialForm: FormData = {
@@ -38,6 +39,7 @@ const initialForm: FormData = {
   proximoTemas: [],
   proximoOtro: "",
   recomendaria: null,
+  origenPolitico: "",
 };
 
 const steps = [
@@ -67,6 +69,11 @@ const steps = [
     id: "recomendar",
     title: "¿Recomendarías el CEJOP?",
     subtitle: "A alguien de tu círculo",
+  },
+  {
+    id: "origen",
+    title: "¿De qué espacio venís?",
+    subtitle: "Partido, agrupación, organización — o individual",
   },
 ];
 
@@ -155,6 +162,8 @@ export default function FeedbackE1Page() {
         );
       case 6:
         return form.recomendaria !== null;
+      case 7:
+        return true; // opcional
       default:
         return false;
     }
@@ -187,6 +196,7 @@ export default function FeedbackE1Page() {
       proximoTemas: form.proximoTemas,
       proximoOtro: form.proximoOtro.trim(),
       recomendaria: form.recomendaria,
+      origenPolitico: form.origenPolitico.trim(),
       encuentro: "e1",
     };
 
@@ -567,6 +577,25 @@ export default function FeedbackE1Page() {
                             );
                           })}
                         </div>
+                      )}
+
+                      {/* Step 7: Origen político */}
+                      {currentStep === 7 && (
+                        <>
+                          <Field
+                            label="Espacio, partido u organización"
+                            name="origenPolitico"
+                            value={form.origenPolitico}
+                            onChange={handleChange}
+                            placeholder='Ej: UCR, Juventud Peronista, MNR, "individual"...'
+                          />
+                          <p className="font-source text-xs text-white/40 leading-relaxed pt-2">
+                            Campo opcional. Si venís de forma individual o no
+                            militás en ningún espacio, podés escribir
+                            &ldquo;individual&rdquo; o dejarlo en blanco. La
+                            pluralidad es el corazón del CEJOP.
+                          </p>
+                        </>
                       )}
                     </div>
 

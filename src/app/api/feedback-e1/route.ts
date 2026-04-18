@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       proximoTemas: Array.isArray(body.proximoTemas) ? body.proximoTemas : [],
       proximoOtro: typeof body.proximoOtro === "string" ? body.proximoOtro.trim() : "",
       recomendaria: body.recomendaria,
+      origenPolitico: typeof body.origenPolitico === "string" ? body.origenPolitico.trim() : "",
       encuentro: "e1",
       createdAt: new Date(),
     };
