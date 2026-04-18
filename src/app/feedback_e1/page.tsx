@@ -20,6 +20,8 @@ const NEXT_TOPICS = [
   { id: "empresas", label: "Empresas y producción" },
 ];
 
+const MAX_NEXT_TOPICS = 3;
+
 type FormData = {
   mail: string;
   nps: number | null;
@@ -153,12 +155,13 @@ export default function FeedbackE1Page() {
   };
 
   const toggleTopic = (id: string) => {
-    setForm((prev) => ({
-      ...prev,
-      proximoTemas: prev.proximoTemas.includes(id)
-        ? prev.proximoTemas.filter((t) => t !== id)
-        : [...prev.proximoTemas, id],
-    }));
+    setForm((prev) => {
+      if (prev.proximoTemas.includes(id)) {
+        return { ...prev, proximoTemas: prev.proximoTemas.filter((t) => t !== id) };
+      }
+      if (prev.proximoTemas.length >= MAX_NEXT_TOPICS) return prev;
+      return { ...prev, proximoTemas: [...prev.proximoTemas, id] };
+    });
   };
 
   const canAdvance = (): boolean => {
@@ -551,22 +554,33 @@ export default function FeedbackE1Page() {
                       {/* Step 5: Próximo tema */}
                       {currentStep === 5 && (
                         <div className="space-y-3">
-                          <p className="font-source text-[13px] text-white/60 leading-relaxed -mt-2 mb-2">
-                            Podés elegir más de uno.
-                          </p>
+                          <div className="flex items-center justify-between -mt-2 mb-2">
+                            <p className="font-source text-[13px] text-white/60 leading-relaxed">
+                              Elegí hasta <strong className="text-white">3 temas</strong>.
+                            </p>
+                            <span className="font-encode text-[11px] font-semibold tracking-[0.2em] uppercase text-cejop-blue-light">
+                              {form.proximoTemas.length}/{MAX_NEXT_TOPICS}
+                            </span>
+                          </div>
                           <div className="space-y-1.5">
                             {NEXT_TOPICS.map((t) => {
                               const selected = form.proximoTemas.includes(
                                 t.id
                               );
+                              const isFull =
+                                form.proximoTemas.length >= MAX_NEXT_TOPICS;
+                              const disabled = !selected && isFull;
                               return (
                                 <button
                                   key={t.id}
                                   onClick={() => toggleTopic(t.id)}
+                                  disabled={disabled}
                                   className={`w-full text-left px-4 py-3 border transition-all duration-200 flex items-center justify-between ${
                                     selected
                                       ? "border-cejop-blue bg-cejop-blue/15 text-white"
-                                      : "border-white/10 bg-white/[0.04] text-white/60 hover:border-white/20"
+                                      : disabled
+                                        ? "border-white/5 bg-white/[0.02] text-white/20 cursor-not-allowed"
+                                        : "border-white/10 bg-white/[0.04] text-white/60 hover:border-white/20"
                                   }`}
                                 >
                                   <span className="font-source text-[14px]">
