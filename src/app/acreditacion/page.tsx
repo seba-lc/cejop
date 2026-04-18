@@ -2,34 +2,56 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CheckCircle, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle, Sparkles, Clock, Mail, Phone } from "lucide-react";
 import Image from "next/image";
 import brandLogo from "@/assets/cejop_brand_cropped.png";
 
 const VIDEO_URL =
   "https://storage.googleapis.com/marketar_bucket/cejop/video_landing.mp4";
 
-type LookupResult = {
+type AsistenteTipo = "confirmado" | "inscripto_no_confirmado" | "walk_in";
+
+type LookupFound = {
+  found: true;
   mail: string;
   inscripto: boolean;
   confirmado: boolean;
   yaAcreditado: boolean;
-  tipo: "confirmado" | "inscripto_no_confirmado" | "walk_in";
+  tipo: AsistenteTipo;
   nombre: string;
   telefono: string;
 };
 
+type LookupNotFound = {
+  found: false;
+  telefono: string;
+  mail: string;
+};
+
+type LookupResult = LookupFound | LookupNotFound;
+
 type ScreenState =
-  | { kind: "email" }
-  | { kind: "confirm-identity"; data: LookupResult }
-  | { kind: "complete-profile"; mail: string }
-  | { kind: "success"; tipo: LookupResult["tipo"]; nombre: string; duplicate: boolean };
+  | { kind: "identify" }
+  | { kind: "confirm-identity"; data: LookupFound }
+  | { kind: "walkin-data"; prefillMail: string; prefillTel: string }
+  | {
+      kind: "success-acreditado";
+      tipo: AsistenteTipo;
+      nombre: string;
+      duplicate: boolean;
+    }
+  | { kind: "success-pendiente"; duplicate: boolean };
+
+type IdentifyMethod = "telefono" | "email";
 
 export default function AcreditacionPage() {
-  const [screen, setScreen] = useState<ScreenState>({ kind: "email" });
-  const [mail, setMail] = useState("");
+  const [screen, setScreen] = useState<ScreenState>({ kind: "identify" });
+  const [method, setMethod] = useState<IdentifyMethod>("telefono");
+  const [inputValue, setInputValue] = useState("");
   const [nombre, setNombre] = useState("");
-  const [telefono, setTelefono] = useState("");
+  const [mailInput, setMailInput] = useState("");
+  const [edadInput, setEdadInput] = useState("");
+  const [telInput, setTelInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState(VIDEO_URL);
@@ -65,26 +87,40 @@ export default function AcreditacionPage() {
     handleCaching();
   }, []);
 
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.trim());
+  const isValidInput =
+    method === "telefono"
+      ? inputValue.replace(/\D/g, "").length >= 8
+      : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputValue.trim());
 
-  async function lookupEmail() {
-    if (!isValidEmail) return;
+  async function lookup() {
+    if (!isValidInput) return;
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await fetch(
-        `/api/acreditacion?mail=${encodeURIComponent(mail.trim())}`
-      );
+      const params =
+        method === "telefono"
+          ? `telefono=${encodeURIComponent(inputValue)}`
+          : `mail=${encodeURIComponent(inputValue.trim().toLowerCase())}`;
+      const res = await fetch(`/api/acreditacion?${params}`);
       const data: LookupResult = await res.json();
       if (!res.ok) {
-        setErrorMsg("Error al buscar el email, intentá de nuevo");
+        setErrorMsg("Error al buscar, intentá de nuevo");
         return;
       }
-      if (data.inscripto) {
-        setNombre(data.nombre);
+      if (data.found) {
         setScreen({ kind: "confirm-identity", data });
       } else {
-        setScreen({ kind: "complete-profile", mail: mail.trim().toLowerCase() });
+        // Prefill según qué usamos para identificarse
+        const prefillMail =
+          method === "email" ? inputValue.trim().toLowerCase() : "";
+        const prefillTel = method === "telefono" ? inputValue : "";
+        setMailInput(prefillMail);
+        setTelInput(prefillTel);
+        setScreen({
+          kind: "walkin-data",
+          prefillMail,
+          prefillTel,
+        });
       }
     } catch {
       setErrorMsg("No se pudo conectar, intentá de nuevo");
@@ -93,29 +129,63 @@ export default function AcreditacionPage() {
     }
   }
 
-  async function registerAttendance(params: {
-    mail: string;
-    nombre?: string;
-    telefono?: string;
-  }) {
+  async function registerInscripto(data: LookupFound) {
     setLoading(true);
     setErrorMsg(null);
     try {
       const res = await fetch("/api/acreditacion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
+        body: JSON.stringify({ mail: data.mail }),
       });
-      const data = await res.json();
+      const json = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || "Error al registrar");
+        setErrorMsg(json.error || "Error al registrar");
         return;
       }
       setScreen({
-        kind: "success",
-        tipo: data.tipo,
-        nombre: data.nombre || params.nombre || "",
-        duplicate: !!data.duplicate,
+        kind: "success-acreditado",
+        tipo: json.tipo,
+        nombre: json.nombre || data.nombre,
+        duplicate: !!json.duplicate,
+      });
+    } catch {
+      setErrorMsg("No se pudo conectar, intentá de nuevo");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitWalkin() {
+    if (!nombre.trim()) {
+      setErrorMsg("Nombre requerido");
+      return;
+    }
+    if (telInput.replace(/\D/g, "").length < 8) {
+      setErrorMsg("Teléfono requerido (al menos 8 dígitos)");
+      return;
+    }
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/acreditacion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: nombre.trim(),
+          mail: mailInput.trim().toLowerCase(),
+          edad: edadInput ? parseInt(edadInput, 10) : null,
+          telefono: telInput.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setErrorMsg(json.error || "Error al registrar");
+        return;
+      }
+      setScreen({
+        kind: "success-pendiente",
+        duplicate: !!json.duplicate,
       });
     } catch {
       setErrorMsg("No se pudo conectar, intentá de nuevo");
@@ -125,10 +195,12 @@ export default function AcreditacionPage() {
   }
 
   function resetFlow() {
-    setScreen({ kind: "email" });
-    setMail("");
+    setScreen({ kind: "identify" });
+    setInputValue("");
     setNombre("");
-    setTelefono("");
+    setMailInput("");
+    setEdadInput("");
+    setTelInput("");
     setErrorMsg(null);
   }
 
@@ -192,9 +264,9 @@ export default function AcreditacionPage() {
                   Cargando
                 </p>
               </motion.div>
-            ) : screen.kind === "email" ? (
+            ) : screen.kind === "identify" ? (
               <motion.div
-                key="email"
+                key="identify"
                 initial={{ opacity: 0, y: 20, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -207,31 +279,57 @@ export default function AcreditacionPage() {
                 <h1 className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-3">
                   Bienvenido/a al primer CEJOP
                 </h1>
-                <p className="font-source text-[15px] text-white/70 leading-relaxed mb-10">
-                  Ingresá tu email para acreditarte.
+                <p className="font-source text-[15px] text-white/70 leading-relaxed mb-8">
+                  {method === "telefono"
+                    ? "Ingresá tu teléfono para identificarte."
+                    : "Ingresá tu email para identificarte."}
                 </p>
 
-                <div>
-                  <label
-                    htmlFor="mail"
-                    className="block font-encode text-[11px] font-semibold tracking-[0.2em] uppercase text-white/50 mb-2"
-                  >
-                    Email
-                  </label>
-                  <input
-                    id="mail"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    value={mail}
-                    onChange={(e) => setMail(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && isValidEmail) lookupEmail();
-                    }}
-                    placeholder="tu@email.com"
-                    className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[15px] focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
-                  />
-                </div>
+                {method === "telefono" ? (
+                  <div>
+                    <label
+                      htmlFor="telefono"
+                      className="block font-encode text-[11px] font-semibold tracking-[0.2em] uppercase text-white/50 mb-2"
+                    >
+                      Teléfono
+                    </label>
+                    <input
+                      id="telefono"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && isValidInput) lookup();
+                      }}
+                      placeholder="3813030000"
+                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[17px] tracking-wide focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block font-encode text-[11px] font-semibold tracking-[0.2em] uppercase text-white/50 mb-2"
+                    >
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && isValidInput) lookup();
+                      }}
+                      placeholder="tu@email.com"
+                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[15px] focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+                    />
+                  </div>
+                )}
 
                 {errorMsg && (
                   <p className="font-source text-xs text-red-400 mt-3">
@@ -240,10 +338,10 @@ export default function AcreditacionPage() {
                 )}
 
                 <button
-                  onClick={lookupEmail}
-                  disabled={!isValidEmail || loading}
+                  onClick={lookup}
+                  disabled={!isValidInput || loading}
                   className={`w-full flex items-center justify-center gap-3 font-montserrat font-bold text-sm tracking-wide py-4 mt-8 transition-all duration-300 group ${
-                    isValidEmail && !loading
+                    isValidInput && !loading
                       ? "bg-white text-cejop-dark hover:bg-white/90"
                       : "bg-white/10 text-white/30 cursor-not-allowed"
                   }`}
@@ -254,6 +352,25 @@ export default function AcreditacionPage() {
                       size={16}
                       className="transition-transform group-hover:translate-x-1"
                     />
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMethod(method === "telefono" ? "email" : "telefono");
+                    setInputValue("");
+                    setErrorMsg(null);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 mt-4 text-white/50 hover:text-white transition-colors py-2 font-source text-[13px]"
+                >
+                  {method === "telefono" ? (
+                    <>
+                      <Mail size={14} /> Identificarme con email
+                    </>
+                  ) : (
+                    <>
+                      <Phone size={14} /> Identificarme con teléfono
+                    </>
                   )}
                 </button>
               </motion.div>
@@ -272,16 +389,23 @@ export default function AcreditacionPage() {
                 </span>
 
                 <h1 className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-4">
-                  ¿Sos vos, {screen.data.nombre.split(" ")[0] || "vos"}?
+                  ¿Sos {screen.data.nombre.split(" ")[0] || "vos"}?
                 </h1>
 
                 <div className="bg-white/[0.07] border border-white/10 p-5 mb-8 space-y-2">
                   <p className="font-source text-[15px] text-white/90">
                     <strong className="font-semibold">{screen.data.nombre}</strong>
                   </p>
-                  <p className="font-source text-[13px] text-white/50">
-                    {screen.data.mail}
-                  </p>
+                  {screen.data.mail && (
+                    <p className="font-source text-[13px] text-white/50">
+                      {screen.data.mail}
+                    </p>
+                  )}
+                  {screen.data.telefono && (
+                    <p className="font-source text-[13px] text-white/50">
+                      {screen.data.telefono}
+                    </p>
+                  )}
                 </div>
 
                 {screen.data.yaAcreditado && (
@@ -298,13 +422,7 @@ export default function AcreditacionPage() {
 
                 <div className="flex flex-col gap-2">
                   <button
-                    onClick={() =>
-                      registerAttendance({
-                        mail: screen.data.mail,
-                        nombre: screen.data.nombre,
-                        telefono: screen.data.telefono,
-                      })
-                    }
+                    onClick={() => registerInscripto(screen.data)}
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-3 font-montserrat font-bold text-sm tracking-wide py-4 bg-white text-cejop-dark hover:bg-white/90 transition-all duration-300 group"
                   >
@@ -321,83 +439,82 @@ export default function AcreditacionPage() {
                     disabled={loading}
                     className="w-full font-montserrat font-semibold text-sm text-white/50 hover:text-white transition-colors py-3"
                   >
-                    No, usar otro email
+                    No, volver
                   </button>
                 </div>
               </motion.div>
-            ) : screen.kind === "complete-profile" ? (
+            ) : screen.kind === "walkin-data" ? (
               <motion.div
-                key="complete-profile"
+                key="walkin-data"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               >
                 <span className="inline-block font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3">
-                  Un paso más
+                  No te encontramos en la lista
                 </span>
 
-                <h1 className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-4">
-                  Contanos quién sos
+                <h1 className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-3">
+                  Dejanos tus datos
                 </h1>
                 <p className="font-source text-[15px] text-white/70 leading-relaxed mb-8">
-                  No te encontramos en la lista de inscriptos, pero está todo
-                  bien — te podés acreditar igual.
+                  Un miembro del equipo va a revisar si podemos darte lugar.
                 </p>
 
                 <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="nombre"
-                      className="block font-encode text-[11px] font-semibold tracking-[0.2em] uppercase text-white/50 mb-2"
-                    >
-                      Nombre y apellido
-                      <span className="text-cejop-blue-light ml-1">*</span>
-                    </label>
-                    <input
-                      id="nombre"
-                      type="text"
-                      autoComplete="name"
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
-                      placeholder="Tu nombre completo"
-                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[15px] focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+                  <Field
+                    id="nombre"
+                    label="Nombre y apellido"
+                    required
+                    value={nombre}
+                    onChange={setNombre}
+                    placeholder="Tu nombre completo"
+                    autoComplete="name"
+                  />
+                  <Field
+                    id="mail"
+                    label="Email"
+                    type="email"
+                    inputMode="email"
+                    value={mailInput}
+                    onChange={setMailInput}
+                    placeholder="tu@email.com"
+                    autoComplete="email"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field
+                      id="edad"
+                      label="Edad"
+                      type="number"
+                      inputMode="numeric"
+                      value={edadInput}
+                      onChange={setEdadInput}
+                      placeholder="18–30"
                     />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="telefono"
-                      className="block font-encode text-[11px] font-semibold tracking-[0.2em] uppercase text-white/50 mb-2"
-                    >
-                      Teléfono (opcional)
-                    </label>
-                    <input
-                      id="telefono"
+                    <Field
+                      id="tel"
+                      label="Teléfono"
+                      required
                       type="tel"
-                      inputMode="tel"
-                      value={telefono}
-                      onChange={(e) => setTelefono(e.target.value)}
-                      placeholder="381 ..."
-                      className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[15px] focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+                      inputMode="numeric"
+                      value={telInput}
+                      onChange={setTelInput}
+                      placeholder="3813030000"
+                      autoComplete="tel"
                     />
                   </div>
                 </div>
 
                 {errorMsg && (
-                  <p className="font-source text-xs text-red-400 mt-3">
+                  <p className="font-source text-xs text-red-400 mt-4">
                     {errorMsg}
                   </p>
                 )}
 
                 <div className="flex flex-col gap-2 mt-8">
                   <button
-                    onClick={() =>
-                      registerAttendance({
-                        mail: screen.mail,
-                        nombre: nombre.trim(),
-                        telefono: telefono.trim(),
-                      })
-                    }
+                    onClick={submitWalkin}
                     disabled={!nombre.trim() || loading}
                     className={`w-full flex items-center justify-center gap-3 font-montserrat font-bold text-sm tracking-wide py-4 transition-all duration-300 group ${
                       nombre.trim() && !loading
@@ -405,7 +522,7 @@ export default function AcreditacionPage() {
                         : "bg-white/10 text-white/30 cursor-not-allowed"
                     }`}
                   >
-                    {loading ? "Acreditando..." : "Acreditarme"}
+                    {loading ? "Enviando..." : "Enviar mis datos"}
                     {!loading && (
                       <ArrowRight
                         size={16}
@@ -422,9 +539,9 @@ export default function AcreditacionPage() {
                   </button>
                 </div>
               </motion.div>
-            ) : screen.kind === "success" ? (
+            ) : screen.kind === "success-acreditado" ? (
               <motion.div
-                key="success"
+                key="success-acreditado"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -443,17 +560,49 @@ export default function AcreditacionPage() {
                     ? "Ya estabas acreditado/a"
                     : screen.tipo === "confirmado"
                       ? `Bienvenido/a, ${screen.nombre.split(" ")[0] || ""}`
-                      : screen.tipo === "inscripto_no_confirmado"
-                        ? `Gracias por venir, ${screen.nombre.split(" ")[0] || ""}`
-                        : `Te sumaste al CEJOP, ${screen.nombre.split(" ")[0] || ""}`}
+                      : `Gracias por venir, ${screen.nombre.split(" ")[0] || ""}`}
                 </h2>
 
                 <p className="font-source text-[15px] text-white/80 leading-relaxed max-w-sm mx-auto mb-8">
                   {screen.tipo === "confirmado"
                     ? "Estás confirmado/a. Pasá a la sala, el encuentro está por empezar."
-                    : screen.tipo === "inscripto_no_confirmado"
-                      ? "Pasá a la sala. Gracias por ser parte del primer CEJOP."
-                      : "Quedaste registrado/a como parte del primer encuentro. Pasá a la sala."}
+                    : "Pasá a la sala. Gracias por ser parte del primer CEJOP."}
+                </p>
+
+                <button
+                  onClick={resetFlow}
+                  className="inline-flex items-center justify-center gap-2 font-montserrat font-semibold text-sm text-white/60 hover:text-white transition-colors py-3 px-6 border border-white/20 hover:border-white/40"
+                >
+                  Acreditar a otra persona
+                </button>
+              </motion.div>
+            ) : screen.kind === "success-pendiente" ? (
+              <motion.div
+                key="success-pendiente"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="text-center py-12"
+              >
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-yellow-500/20 mb-6">
+                  <Clock size={36} className="text-yellow-300" />
+                </div>
+
+                <h2 className="font-montserrat font-black text-3xl sm:text-4xl text-white mb-4 leading-tight">
+                  {screen.duplicate
+                    ? "Ya tenemos tus datos"
+                    : "Ya recibimos tus datos"}
+                </h2>
+
+                <p className="font-source text-[15px] text-white/80 leading-relaxed max-w-sm mx-auto mb-4">
+                  Acercate a la mesa del CEJOP. Un miembro del equipo va a
+                  revisar tu inscripción y confirmarte en el momento si podés
+                  pasar.
+                </p>
+
+                <p className="font-source text-[13px] text-white/50 leading-relaxed max-w-sm mx-auto mb-8">
+                  No cierres esta pantalla ni te alejes — te responden en un
+                  par de minutos.
                 </p>
 
                 <button
@@ -468,5 +617,49 @@ export default function AcreditacionPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function Field({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  inputMode,
+  required,
+  autoComplete,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  type?: string;
+  inputMode?: "numeric" | "tel" | "email" | "text";
+  required?: boolean;
+  autoComplete?: string;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block font-encode text-[11px] font-semibold tracking-[0.2em] uppercase text-white/50 mb-2"
+      >
+        {label}
+        {required && <span className="text-cejop-blue-light ml-1">*</span>}
+      </label>
+      <input
+        id={id}
+        type={type}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-white/[0.07] border border-white/15 text-white placeholder-white/25 px-4 py-3.5 font-source text-[15px] focus:outline-none focus:border-cejop-blue-light/60 focus:bg-white/10 transition-all rounded-none"
+      />
+    </div>
   );
 }

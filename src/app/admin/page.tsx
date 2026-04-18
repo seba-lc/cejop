@@ -24,6 +24,10 @@ import {
   Smile,
   ThumbsUp,
   Flag,
+  Clock,
+  X,
+  Check,
+  Phone,
 } from "lucide-react";
 import {
   BarChart,
@@ -77,6 +81,7 @@ const PIE_COLORS = [
 const TABS = [
   { id: "panel", label: "Panel", icon: BarChart3 },
   { id: "confirmados", label: "Confirmados", icon: CheckCircle2 },
+  { id: "pendientes", label: "Pendientes", icon: Clock },
   { id: "acreditados", label: "Acreditados", icon: UserPlus },
   { id: "feedback", label: "Feedback", icon: Smile },
   { id: "emails", label: "Emails", icon: Mail },
@@ -367,6 +372,7 @@ export default function AdminDashboard() {
           />
         )}
         {activeTab === "confirmados" && <TabConfirmados />}
+        {activeTab === "pendientes" && <TabPendientes />}
         {activeTab === "acreditados" && <TabAsistentes />}
         {activeTab === "feedback" && <TabFeedback />}
         {activeTab === "emails" && <TabEmailsLog />}
@@ -2826,3 +2832,302 @@ const TOPIC_LABELS: Record<string, string> = {
   juventudes: "Juventudes y trabajo",
   empresas: "Empresas y producción",
 };
+
+/* ── Tab: Pendientes de acreditación ── */
+
+type PendienteItem = {
+  id: string;
+  nombre: string;
+  mail: string;
+  edad: number | null;
+  telefono: string;
+  telefonoNorm: string;
+  estado: "pending" | "approved" | "rejected";
+  createdAt: string | null;
+  resolvedAt: string | null;
+};
+
+type PendientesCounts = {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+};
+
+type PendienteFilter = "pending" | "approved" | "rejected" | "all";
+
+function TabPendientes() {
+  const [items, setItems] = useState<PendienteItem[]>([]);
+  const [counts, setCounts] = useState<PendientesCounts | null>(null);
+  const [search, setSearch] = useState("");
+  const [estado, setEstado] = useState<PendienteFilter>("pending");
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    params.set("estado", estado);
+
+    const res = await fetch(`/api/admin/pendientes?${params}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setItems(data.items || []);
+    setCounts(data.counts || null);
+  }, [search, estado]);
+
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(fetchData, 8000);
+    return () => clearInterval(id);
+  }, [autoRefresh, fetchData]);
+
+  async function resolver(id: string, accion: "approve" | "reject") {
+    setUpdatingId(id);
+    // Optimistic update: remove from pending list
+    setItems((prev) => prev.filter((p) => p.id !== id));
+    if (counts) {
+      setCounts({
+        ...counts,
+        pending: Math.max(0, counts.pending - 1),
+        approved: counts.approved + (accion === "approve" ? 1 : 0),
+        rejected: counts.rejected + (accion === "reject" ? 1 : 0),
+      });
+    }
+    try {
+      const res = await fetch("/api/admin/pendientes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, accion }),
+      });
+      if (!res.ok) {
+        // Revert on failure
+        await fetchData();
+      }
+    } catch {
+      await fetchData();
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-cejop-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <SectionTitle>Pendientes de acreditación</SectionTitle>
+
+      <p className="text-sm text-gray-400 -mt-3">
+        Personas que se presentaron sin estar en la lista. Aprobá o rechazá
+        su entrada.
+      </p>
+
+      {/* Counts */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Clock size={16} className="text-yellow-400" />
+            <span className="text-sm text-gray-400 font-medium">Pendientes</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.pending || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 size={16} className="text-green-400" />
+            <span className="text-sm text-gray-400 font-medium">Aprobados</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.approved || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle size={16} className="text-red-400" />
+            <span className="text-sm text-gray-400 font-medium">Rechazados</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.rejected || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Users size={16} className="text-cejop-blue" />
+            <span className="text-sm text-gray-400 font-medium">Total</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.total || 0}
+          </p>
+        </Card>
+      </div>
+
+      {/* Controls */}
+      <Card>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, email o teléfono..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cejop-blue transition-colors"
+            />
+          </div>
+          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
+            {(
+              [
+                { id: "pending", label: "Pendientes" },
+                { id: "approved", label: "Aprobados" },
+                { id: "rejected", label: "Rechazados" },
+                { id: "all", label: "Todos" },
+              ] as { id: PendienteFilter; label: string }[]
+            ).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setEstado(f.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                  estado === f.id
+                    ? "bg-cejop-blue text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setAutoRefresh((v) => !v)}
+            className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-xs font-medium transition-colors ${
+              autoRefresh
+                ? "border-green-500/30 bg-green-500/10 text-green-300"
+                : "border-white/10 bg-white/5 text-gray-400 hover:text-white"
+            }`}
+            title="Refresh automático cada 8s"
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                autoRefresh ? "bg-green-400 animate-pulse" : "bg-gray-500"
+              }`}
+            />
+            Live
+          </button>
+        </div>
+      </Card>
+
+      {/* List */}
+      <div className="space-y-3">
+        {items.map((it) => (
+          <Card key={it.id} className="!p-0 overflow-hidden">
+            <div className="p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex-1 min-w-[180px]">
+                  <p className="font-montserrat font-semibold text-white text-[15px]">
+                    {it.nombre || "(sin nombre)"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
+                    <Phone size={12} className="text-cejop-blue" />
+                    <span className="font-mono">{it.telefono}</span>
+                  </p>
+                  {it.mail && (
+                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+                      <Mail size={12} className="text-cejop-blue" />
+                      <span className="truncate">{it.mail}</span>
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-500">
+                    {it.edad && <span>{it.edad} años</span>}
+                    {it.createdAt && (
+                      <span>
+                        {new Date(it.createdAt).toLocaleTimeString("es-AR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
+                    <EstadoBadge estado={it.estado} />
+                  </div>
+                </div>
+
+                {it.estado === "pending" ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => resolver(it.id, "reject")}
+                      disabled={updatingId === it.id}
+                      className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      <X size={14} />
+                      Rechazar
+                    </button>
+                    <button
+                      onClick={() => resolver(it.id, "approve")}
+                      disabled={updatingId === it.id}
+                      className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-green-500 text-white hover:bg-green-500/90 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      <Check size={14} />
+                      Aprobar
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </Card>
+        ))}
+        {items.length === 0 && (
+          <Card>
+            <div className="text-center py-12">
+              <Clock size={40} className="text-gray-600 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">
+                {estado === "pending"
+                  ? "No hay pendientes por resolver"
+                  : "No hay resultados con esos filtros"}
+              </p>
+            </div>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EstadoBadge({
+  estado,
+}: {
+  estado: "pending" | "approved" | "rejected";
+}) {
+  if (estado === "pending") {
+    return (
+      <span className="inline-block px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 text-[10px] font-semibold">
+        Pendiente
+      </span>
+    );
+  }
+  if (estado === "approved") {
+    return (
+      <span className="inline-block px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-300 text-[10px] font-semibold">
+        Aprobado
+      </span>
+    );
+  }
+  return (
+    <span className="inline-block px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 text-[10px] font-semibold">
+      Rechazado
+    </span>
+  );
+}
+
