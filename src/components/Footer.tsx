@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Instagram, Mail } from "lucide-react";
 import Image from "next/image";
 import brandLogo from "@/assets/cejop_brand_cropped.png";
+import PoweredByVitrio from "@/components/PoweredByVitrio";
 
 const socials = [
   { icon: Instagram, href: "https://www.instagram.com/cejoptucuman", label: "Instagram de CEJOP Tucumán", handle: "@cejoptucuman" },
@@ -109,9 +110,7 @@ export default function Footer() {
           <p className="font-source text-xs text-white/30">
             © 2026 CEJOP Tucumán. Todos los derechos reservados.
           </p>
-          <p className="font-source text-xs text-white/20">
-            Formación política para jóvenes · Tucumán, Argentina
-          </p>
+          <PoweredByVitrio location="landing-footer" theme="dark" />
         </div>
       </div>
     </footer>
