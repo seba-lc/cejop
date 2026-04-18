@@ -103,8 +103,6 @@ function setCookie(name: string, value: string, days: number) {
 export default function FeedbackE1Page() {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
-  const [alreadyDone, setAlreadyDone] = useState(false);
-  const [duplicateMessage, setDuplicateMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [direction, setDirection] = useState(1);
@@ -114,8 +112,10 @@ export default function FeedbackE1Page() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    // Si ya completó antes (cookie presente), saltamos directo a la
+    // misma pantalla de "Gracias por responder".
     const cookie = getCookie(COOKIE_NAME);
-    if (cookie) setAlreadyDone(true);
+    if (cookie) setSubmitted(true);
   }, []);
 
   // Safety: no dejar al usuario esperando más de 5s si el video no llega
@@ -229,9 +229,11 @@ export default function FeedbackE1Page() {
 
       const data = await res.json();
 
+      // Duplicado: backend no guarda nada. Mostramos la misma pantalla
+      // de éxito para que el usuario no note la diferencia.
       if (res.status === 409 && data.duplicate) {
-        setDuplicateMessage(data.message);
         setCookie(COOKIE_NAME, form.mail.trim(), 90);
+        setSubmitted(true);
         return;
       }
 
@@ -303,29 +305,7 @@ export default function FeedbackE1Page() {
       <div className="relative z-10 flex-1 flex flex-col justify-center px-4 py-6 sm:px-6">
         <div className="w-full max-w-lg mx-auto">
           <AnimatePresence mode="wait">
-            {alreadyDone || duplicateMessage ? (
-              <motion.div
-                key="already-done"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-12"
-              >
-                <CheckCircle
-                  size={56}
-                  className="text-cejop-blue-light mx-auto mb-6"
-                />
-                <h2 className="font-montserrat font-black text-2xl sm:text-3xl text-white mb-4">
-                  Ya recibimos tu feedback
-                </h2>
-                <p className="font-source text-white/80 text-base leading-relaxed max-w-sm mx-auto mb-4">
-                  {duplicateMessage ||
-                    "Tu respuesta sobre el primer encuentro ya quedó registrada. Gracias por compartirla."}
-                </p>
-                <p className="font-source text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
-                  Nos vemos en el próximo encuentro.
-                </p>
-              </motion.div>
-            ) : !videoReady ? (
+            {!videoReady && !submitted ? (
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }}
