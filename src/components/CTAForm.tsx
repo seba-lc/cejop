@@ -55,7 +55,7 @@ export default function CTAForm() {
             transition={{ duration: 0.7, delay: 0.4 }}
           >
             <a
-              href="/encuesta"
+              href="/encuestas_ev1"
               className="inline-flex items-center justify-center gap-3 bg-white text-cejop-dark font-montserrat font-bold text-sm tracking-wide px-10 py-4 transition-all duration-300 group hover:shadow-lg hover:shadow-white/15 hover:translate-y-[-2px]"
               aria-label="Inscribite en la primera charla de CEJOP Tucumán"
             >

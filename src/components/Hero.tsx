@@ -152,7 +152,7 @@ export default function Hero() {
                     className="mt-12 flex flex-col sm:flex-row gap-4"
                 >
                     <a
-                        href="/encuesta"
+                        href="/encuestas_ev1"
                         className="btn-primary-bw text-sm px-8 py-4"
                         aria-label="Inscribite al programa CEJOP Tucumán"
                     >

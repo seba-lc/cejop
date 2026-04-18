@@ -89,7 +89,7 @@ export default function Navbar() {
                 </button>
               ))}
               <a
-                href="/encuesta"
+                href="/encuestas_ev1"
                 className={`btn-primary px-5 py-2 transition-all duration-500 text-[11px]`}
                 aria-label="Inscribite al programa CEJOP"
               >
@@ -139,7 +139,7 @@ export default function Navbar() {
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: navLinks.length * 0.07 }}
-                href="/encuesta"
+                href="/encuestas_ev1"
                 className="btn-primary mt-4 self-start"
               >
                 Inscribite

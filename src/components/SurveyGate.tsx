@@ -42,11 +42,11 @@ export default function SurveyGate({
       });
   }, []);
 
-  // Intercept clicks to /encuesta
+  // Intercept clicks to /encuestas_ev1
   const handleClick = useCallback(
     (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const anchor = target.closest("a[href='/encuesta']");
+      const anchor = target.closest("a[href='/encuestas_ev1']");
       const button = target.closest("[data-encuesta]");
 
       if (!anchor && !button) return;
