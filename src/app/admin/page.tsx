@@ -21,6 +21,9 @@ import {
   AlertCircle,
   Send,
   UserPlus,
+  Smile,
+  ThumbsUp,
+  Flag,
 } from "lucide-react";
 import {
   BarChart,
@@ -75,6 +78,7 @@ const TABS = [
   { id: "panel", label: "Panel", icon: BarChart3 },
   { id: "confirmados", label: "Confirmados", icon: CheckCircle2 },
   { id: "acreditados", label: "Acreditados", icon: UserPlus },
+  { id: "feedback", label: "Feedback", icon: Smile },
   { id: "emails", label: "Emails", icon: Mail },
   { id: "prioridades", label: "Prioridades", icon: ClipboardList },
   { id: "dirigentes", label: "Dirigentes", icon: UserCheck },
@@ -364,6 +368,7 @@ export default function AdminDashboard() {
         )}
         {activeTab === "confirmados" && <TabConfirmados />}
         {activeTab === "acreditados" && <TabAsistentes />}
+        {activeTab === "feedback" && <TabFeedback />}
         {activeTab === "emails" && <TabEmailsLog />}
         {activeTab === "prioridades" && (
           <TabPrioridades
@@ -2275,3 +2280,549 @@ function TabAsistentes() {
     </div>
   );
 }
+
+/* ── Tab: Feedback ── */
+
+type FeedbackItem = {
+  id: string;
+  mail: string;
+  nps: number;
+  teLlevas: string;
+  mejorarias: string;
+  proximoTemas: string[];
+  proximoOtro: string;
+  recomendaria: "si" | "talvez" | "no";
+  origenPolitico: string;
+  createdAt: string | null;
+};
+
+type FeedbackStats = {
+  total: number;
+  npsAvg: number;
+  npsScore: number;
+  promoters: number;
+  passives: number;
+  detractors: number;
+  npsDistribution: { score: number; count: number }[];
+  recomendaria: { si: number; talvez: number; no: number };
+  proximoTemas: { id: string; label: string; count: number }[];
+  origenes: { label: string; count: number }[];
+};
+
+function TabFeedback() {
+  const [items, setItems] = useState<FeedbackItem[]>([]);
+  const [stats, setStats] = useState<FeedbackStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/feedback")
+      .then((r) => r.json())
+      .then((data) => {
+        setItems(data.items || []);
+        setStats(data.stats || null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-cejop-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!stats || stats.total === 0) {
+    return (
+      <div className="space-y-6">
+        <SectionTitle>Feedback del encuentro</SectionTitle>
+        <Card>
+          <div className="text-center py-12">
+            <Smile size={40} className="text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 text-sm">
+              Todavía no hay respuestas de feedback.
+            </p>
+            <p className="text-gray-500 text-xs mt-2">
+              Los feedbacks van a aparecer a medida que los participantes
+              completen el formulario.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const recTotal =
+    stats.recomendaria.si +
+    stats.recomendaria.talvez +
+    stats.recomendaria.no || 1;
+
+  return (
+    <div className="space-y-6">
+      <SectionTitle>Feedback del encuentro</SectionTitle>
+
+      {/* Top stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare size={16} className="text-cejop-blue" />
+            <span className="text-sm text-gray-400 font-medium">Respuestas</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {stats.total}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Smile size={16} className="text-yellow-400" />
+            <span className="text-sm text-gray-400 font-medium">Promedio</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {stats.npsAvg}
+            <span className="text-base text-gray-500 ml-1">/10</span>
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp
+              size={16}
+              className={
+                stats.npsScore >= 50
+                  ? "text-green-400"
+                  : stats.npsScore >= 0
+                    ? "text-yellow-400"
+                    : "text-red-400"
+              }
+            />
+            <span className="text-sm text-gray-400 font-medium">NPS</span>
+          </div>
+          <p
+            className={`text-3xl font-bold font-montserrat ${
+              stats.npsScore >= 50
+                ? "text-green-400"
+                : stats.npsScore >= 0
+                  ? "text-yellow-400"
+                  : "text-red-400"
+            }`}
+          >
+            {stats.npsScore > 0 ? "+" : ""}
+            {stats.npsScore}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <ThumbsUp size={16} className="text-green-400" />
+            <span className="text-sm text-gray-400 font-medium">
+              Recomiendan
+            </span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {Math.round(
+              ((stats.recomendaria.si + stats.recomendaria.talvez) / recTotal) *
+                100
+            )}
+            <span className="text-base text-gray-500">%</span>
+          </p>
+        </Card>
+      </div>
+
+      {/* NPS breakdown + distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-1">
+          <h3 className="font-montserrat font-semibold text-white mb-4 text-sm">
+            Clasificación NPS
+          </h3>
+          <div className="space-y-3">
+            <NpsBucket
+              label="Promotores (9-10)"
+              count={stats.promoters}
+              total={stats.total}
+              color="#22C55E"
+            />
+            <NpsBucket
+              label="Pasivos (7-8)"
+              count={stats.passives}
+              total={stats.total}
+              color="#EAB308"
+            />
+            <NpsBucket
+              label="Detractores (1-6)"
+              count={stats.detractors}
+              total={stats.total}
+              color="#EF4444"
+            />
+          </div>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <h3 className="font-montserrat font-semibold text-white mb-4 text-sm">
+            Distribución de calificaciones
+          </h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.npsDistribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <XAxis
+                  dataKey="score"
+                  tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                  axisLine={{ stroke: "#ffffff10" }}
+                />
+                <YAxis
+                  tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                  axisLine={{ stroke: "#ffffff10" }}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1a1d3d",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "8px",
+                    color: "white",
+                  }}
+                />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Respuestas">
+                  {stats.npsDistribution.map((d) => (
+                    <Cell
+                      key={d.score}
+                      fill={
+                        d.score >= 9
+                          ? "#22C55E"
+                          : d.score >= 7
+                            ? "#EAB308"
+                            : "#EF4444"
+                      }
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      {/* Recomendación + próximos temas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <h3 className="font-montserrat font-semibold text-white mb-4 text-sm">
+            ¿Recomendarían el CEJOP?
+          </h3>
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="h-48 w-48 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Sí", value: stats.recomendaria.si },
+                      { name: "Tal vez", value: stats.recomendaria.talvez },
+                      { name: "No", value: stats.recomendaria.no },
+                    ].filter((d) => d.value > 0)}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={36}
+                    outerRadius={72}
+                    stroke="none"
+                  >
+                    <Cell fill="#22C55E" />
+                    <Cell fill="#EAB308" />
+                    <Cell fill="#EF4444" />
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "#1a1d3d",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "8px",
+                      color: "white",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-3 flex-1 min-w-[140px]">
+              <RecItem
+                label="Sí"
+                count={stats.recomendaria.si}
+                total={recTotal}
+                color="bg-green-500"
+              />
+              <RecItem
+                label="Tal vez"
+                count={stats.recomendaria.talvez}
+                total={recTotal}
+                color="bg-yellow-500"
+              />
+              <RecItem
+                label="No"
+                count={stats.recomendaria.no}
+                total={recTotal}
+                color="bg-red-500"
+              />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="font-montserrat font-semibold text-white mb-4 text-sm">
+            Próximos temas más pedidos
+          </h3>
+          {stats.proximoTemas.length === 0 ? (
+            <p className="text-gray-500 text-xs">Sin votos aún.</p>
+          ) : (
+            <div className="space-y-2.5">
+              {stats.proximoTemas.map((t, i) => (
+                <div key={t.id} className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-gray-500 w-5">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs text-gray-300">{t.label}</span>
+                      <span className="text-xs font-semibold text-white">
+                        {t.count}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-cejop-blue rounded-full transition-all"
+                        style={{
+                          width: `${
+                            (t.count / stats.proximoTemas[0].count) * 100
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Orígenes políticos */}
+      {stats.origenes.length > 0 && (
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <Flag size={14} className="text-purple-300" />
+            <h3 className="font-montserrat font-semibold text-white text-sm">
+              Espacios de procedencia
+            </h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {stats.origenes.map((o) => (
+              <span
+                key={o.label}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/15 text-purple-200 text-xs"
+              >
+                <span className="font-medium">{o.label}</span>
+                <span className="text-purple-300/70 text-[10px] font-semibold">
+                  ×{o.count}
+                </span>
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Respuestas individuales */}
+      <Card className="!p-0 overflow-hidden">
+        <div className="px-4 sm:px-6 py-4 border-b border-white/10 flex items-center justify-between">
+          <h3 className="font-montserrat font-semibold text-white text-sm">
+            Respuestas individuales
+          </h3>
+          <span className="text-xs text-gray-500">
+            {items.length} {items.length === 1 ? "respuesta" : "respuestas"}
+          </span>
+        </div>
+        <div className="divide-y divide-white/5">
+          {items.map((it) => {
+            const expanded = expandedId === it.id;
+            return (
+              <div key={it.id} className="px-4 sm:px-6 py-4">
+                <button
+                  onClick={() => setExpandedId(expanded ? null : it.id)}
+                  className="w-full flex items-start gap-3 text-left"
+                >
+                  <div
+                    className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold font-montserrat ${
+                      it.nps >= 9
+                        ? "bg-green-500/20 text-green-300"
+                        : it.nps >= 7
+                          ? "bg-yellow-500/20 text-yellow-300"
+                          : "bg-red-500/20 text-red-300"
+                    }`}
+                  >
+                    {it.nps}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-white truncate">
+                        {it.mail}
+                      </span>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                          it.recomendaria === "si"
+                            ? "bg-green-500/20 text-green-300"
+                            : it.recomendaria === "talvez"
+                              ? "bg-yellow-500/20 text-yellow-300"
+                              : "bg-red-500/20 text-red-300"
+                        }`}
+                      >
+                        {it.recomendaria === "si"
+                          ? "Recomienda"
+                          : it.recomendaria === "talvez"
+                            ? "Tal vez"
+                            : "No recom."}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                      {it.teLlevas || "(sin respuesta)"}
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {it.createdAt
+                        ? new Date(it.createdAt).toLocaleString("es-AR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
+                      {it.origenPolitico && (
+                        <>
+                          {" · "}
+                          <span className="text-purple-300">
+                            {it.origenPolitico}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div className="shrink-0 pt-2">
+                    {expanded ? (
+                      <ChevronUp size={14} className="text-gray-500" />
+                    ) : (
+                      <ChevronDown size={14} className="text-gray-500" />
+                    )}
+                  </div>
+                </button>
+
+                {expanded && (
+                  <div className="mt-4 pl-12 space-y-3 text-xs">
+                    <DetailBlock label="Qué se lleva" value={it.teLlevas} />
+                    {it.mejorarias && (
+                      <DetailBlock
+                        label="Qué mejoraría"
+                        value={it.mejorarias}
+                      />
+                    )}
+                    {it.proximoTemas.length > 0 && (
+                      <div>
+                        <p className="text-gray-500 uppercase tracking-wider text-[10px] font-semibold mb-1">
+                          Próximos temas
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {it.proximoTemas.map((t) => (
+                            <span
+                              key={t}
+                              className="inline-block px-2 py-0.5 rounded-full bg-cejop-blue/20 text-cejop-blue text-[10px]"
+                            >
+                              {TOPIC_LABELS[t] || t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {it.proximoOtro && (
+                      <DetailBlock label="Otro tema" value={it.proximoOtro} />
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function NpsBucket({
+  label,
+  count,
+  total,
+  color,
+}: {
+  label: string;
+  count: number;
+  total: number;
+  color: string;
+}) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-xs text-gray-400">{label}</span>
+        <span className="text-xs font-semibold text-white">
+          {count}{" "}
+          <span className="text-gray-500 font-normal">({pct}%)</span>
+        </span>
+      </div>
+      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RecItem({
+  label,
+  count,
+  total,
+  color,
+}: {
+  label: string;
+  count: number;
+  total: number;
+  color: string;
+}) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
+      <span className="text-xs text-gray-300 flex-1">{label}</span>
+      <span className="text-xs font-semibold text-white">
+        {count}
+        <span className="text-gray-500 font-normal ml-1">({pct}%)</span>
+      </span>
+    </div>
+  );
+}
+
+function DetailBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-gray-500 uppercase tracking-wider text-[10px] font-semibold mb-1">
+        {label}
+      </p>
+      <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+const TOPIC_LABELS: Record<string, string> = {
+  interior: "Ministerio del Interior",
+  economia: "Economía",
+  judicial: "Poder Judicial",
+  legislativo: "Poder Legislativo",
+  urbanizacion: "Urbanización y política social",
+  medios: "Medios y opinión pública",
+  juventudes: "Juventudes y trabajo",
+  empresas: "Empresas y producción",
+};
