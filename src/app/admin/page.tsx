@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Mail,
   AlertCircle,
+  Send,
 } from "lucide-react";
 import {
   BarChart,
@@ -1563,6 +1564,10 @@ function TabEmailsLog() {
   const [campaign, setCampaign] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [testMail, setTestMail] = useState("");
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] =
+    useState<{ ok: boolean; message: string } | null>(null);
 
   const fetchData = useCallback(async () => {
     const params = new URLSearchParams();
@@ -1581,6 +1586,44 @@ function TabEmailsLog() {
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
+  async function sendTest() {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testMail.trim())) {
+      setTestResult({
+        ok: false,
+        message: "Ingresá un email válido",
+      });
+      return;
+    }
+    setTestSending(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/admin/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mail: testMail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setTestResult({
+          ok: false,
+          message: data.error || "Error al enviar",
+        });
+      } else {
+        setTestResult({
+          ok: true,
+          message: `Test enviado a ${testMail.trim()} · ${data.timestamp}`,
+        });
+      }
+    } catch {
+      setTestResult({
+        ok: false,
+        message: "No se pudo conectar con el servidor",
+      });
+    } finally {
+      setTestSending(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -1594,6 +1637,53 @@ function TabEmailsLog() {
   return (
     <div className="space-y-6">
       <SectionTitle>Emails enviados</SectionTitle>
+
+      {/* Test de conectividad */}
+      <Card>
+        <div className="flex items-start gap-3 mb-4">
+          <div>
+            <h3 className="font-montserrat font-semibold text-white text-sm">
+              Test del sistema de emails
+            </h3>
+            <p className="text-xs text-gray-400 mt-1">
+              Mandá un email de ping a cualquier dirección para verificar
+              que Resend, el dominio y los templates están OK. No afecta
+              las estadísticas ni se guarda como envío real.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+          <input
+            type="email"
+            placeholder="tu@email.com"
+            value={testMail}
+            onChange={(e) => setTestMail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !testSending) sendTest();
+            }}
+            className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cejop-blue transition-colors"
+          />
+          <button
+            onClick={sendTest}
+            disabled={testSending}
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 bg-cejop-blue text-white text-sm font-semibold rounded-lg transition-colors ${
+              testSending ? "opacity-60" : "hover:bg-cejop-blue/90"
+            }`}
+          >
+            <Send size={14} />
+            {testSending ? "Enviando..." : "Enviar test"}
+          </button>
+        </div>
+        {testResult && (
+          <p
+            className={`text-xs mt-3 ${
+              testResult.ok ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            {testResult.message}
+          </p>
+        )}
+      </Card>
 
       {/* Counts */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
