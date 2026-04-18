@@ -28,10 +28,10 @@ export default function GraciasFeedback({ nombre }: GraciasFeedbackProps) {
 
       <LeftBorderBlock accent="blue">
         <Paragraph>
-          En mayo abrimos el segundo encuentro: <strong>la cocina del
-          poder con el Ministerio del Interior</strong>. El cupo
-          sigue siendo limitado. Te avisamos por este mismo email
-          apenas se habilite la inscripción.
+          Estate atento/a a nuestras redes:{" "}
+          <strong>@cejoptucuman</strong> en Instagram. Ahí vamos a
+          anunciar el próximo encuentro y cuándo se abren las
+          inscripciones.
         </Paragraph>
       </LeftBorderBlock>
 
