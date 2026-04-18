@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -17,6 +17,8 @@ import {
   ClipboardList,
   CalendarDays,
   CheckCircle2,
+  Mail,
+  AlertCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -70,6 +72,7 @@ const PIE_COLORS = [
 const TABS = [
   { id: "panel", label: "Panel", icon: BarChart3 },
   { id: "confirmados", label: "Confirmados", icon: CheckCircle2 },
+  { id: "emails", label: "Emails", icon: Mail },
   { id: "prioridades", label: "Prioridades", icon: ClipboardList },
   { id: "dirigentes", label: "Dirigentes", icon: UserCheck },
   { id: "demografia", label: "Demografía", icon: MapPin },
@@ -357,6 +360,7 @@ export default function AdminDashboard() {
           />
         )}
         {activeTab === "confirmados" && <TabConfirmados />}
+        {activeTab === "emails" && <TabEmailsLog />}
         {activeTab === "prioridades" && (
           <TabPrioridades
             allPriorities={allPriorities}
@@ -1504,6 +1508,315 @@ function TabConfirmados() {
                     {search || filter !== "all"
                       ? "No hay resultados con esos filtros"
                       : "No hay inscriptos todavía"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ── Tab: Emails (log de envíos) ── */
+
+type EmailLogItem = {
+  id: string;
+  mail: string;
+  campaign: string;
+  campaignLabel: string;
+  status: "sent" | "failed";
+  resendId: string | null;
+  error: string | null;
+  sentAt: string | null;
+  nombre: string;
+};
+
+type EmailLogCounts = {
+  total: number;
+  sent: number;
+  failed: number;
+  byCampaign: Record<string, { sent: number; failed: number; label: string }>;
+};
+
+type EmailStatusFilter = "all" | "sent" | "failed";
+
+function TabEmailsLog() {
+  const [items, setItems] = useState<EmailLogItem[]>([]);
+  const [counts, setCounts] = useState<EmailLogCounts | null>(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<EmailStatusFilter>("all");
+  const [campaign, setCampaign] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (status !== "all") params.set("status", status);
+    if (campaign) params.set("campaign", campaign);
+
+    const res = await fetch(`/api/admin/emails-log?${params}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setItems(data.items || []);
+    setCounts(data.counts || null);
+  }, [search, status, campaign]);
+
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-cejop-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const campaigns = counts ? Object.entries(counts.byCampaign) : [];
+
+  return (
+    <div className="space-y-6">
+      <SectionTitle>Emails enviados</SectionTitle>
+
+      {/* Counts */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Mail size={16} className="text-cejop-blue" />
+            <span className="text-sm text-gray-400 font-medium">Total</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.total || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 size={16} className="text-green-400" />
+            <span className="text-sm text-gray-400 font-medium">Enviados</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.sent || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle size={16} className="text-red-400" />
+            <span className="text-sm text-gray-400 font-medium">Fallidos</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.failed || 0}
+          </p>
+        </Card>
+      </div>
+
+      {/* Campaign breakdown */}
+      {campaigns.length > 0 && (
+        <Card>
+          <h3 className="font-montserrat font-semibold text-white mb-4">
+            Por campaña
+          </h3>
+          <div className="space-y-2">
+            {campaigns.map(([id, data]) => (
+              <div
+                key={id}
+                className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
+              >
+                <div>
+                  <p className="text-sm font-medium text-white">
+                    {data.label}
+                  </p>
+                  <p className="text-xs text-gray-500 font-mono">{id}</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="text-green-400">{data.sent} enviados</span>
+                  {data.failed > 0 && (
+                    <span className="text-red-400">
+                      {data.failed} fallidos
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Filters */}
+      <Card>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+            <input
+              type="text"
+              placeholder="Buscar por email o nombre..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cejop-blue transition-colors"
+            />
+          </div>
+          <select
+            value={campaign}
+            onChange={(e) => setCampaign(e.target.value)}
+            className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cejop-blue transition-colors"
+          >
+            <option value="">Todas las campañas</option>
+            {campaigns.map(([id, data]) => (
+              <option key={id} value={id}>
+                {data.label}
+              </option>
+            ))}
+          </select>
+          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
+            {(
+              [
+                { id: "all", label: "Todos" },
+                { id: "sent", label: "Enviados" },
+                { id: "failed", label: "Fallidos" },
+              ] as { id: EmailStatusFilter; label: string }[]
+            ).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setStatus(f.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                  status === f.id
+                    ? "bg-cejop-blue text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* Table */}
+      <Card className="!p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
+                  Campaña
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden lg:table-cell">
+                  Fecha
+                </th>
+                <th className="text-right px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="w-10" />
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((it) => {
+                const expanded = expandedId === it.id;
+                const hasDetail = !!(it.error || it.resendId || it.nombre);
+                return (
+                  <Fragment key={it.id}>
+                    <tr
+                      className={`border-b border-white/5 transition-colors ${
+                        hasDetail
+                          ? "hover:bg-white/5 cursor-pointer"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        hasDetail &&
+                        setExpandedId(expanded ? null : it.id)
+                      }
+                    >
+                      <td className="px-6 py-3 font-medium text-white">
+                        {it.mail}
+                      </td>
+                      <td className="px-6 py-3 text-gray-400 hidden md:table-cell">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-cejop-blue/20 text-cejop-blue">
+                          {it.campaignLabel}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-gray-400 hidden lg:table-cell">
+                        {it.sentAt
+                          ? new Date(it.sentAt).toLocaleString("es-AR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—"}
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        {it.status === "sent" ? (
+                          <span className="text-green-400 text-xs font-semibold">
+                            Enviado
+                          </span>
+                        ) : (
+                          <span className="text-red-400 text-xs font-semibold">
+                            Falló
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {hasDetail &&
+                          (expanded ? (
+                            <ChevronUp size={14} className="text-gray-500" />
+                          ) : (
+                            <ChevronDown size={14} className="text-gray-500" />
+                          ))}
+                      </td>
+                    </tr>
+                    {expanded && hasDetail && (
+                      <tr className="bg-white/[0.02] border-b border-white/5">
+                        <td colSpan={5} className="px-6 py-4">
+                          <dl className="space-y-1.5 text-xs">
+                            {it.nombre && (
+                              <div className="flex gap-2">
+                                <dt className="text-gray-500 min-w-[90px]">
+                                  Nombre:
+                                </dt>
+                                <dd className="text-gray-300">{it.nombre}</dd>
+                              </div>
+                            )}
+                            {it.resendId && (
+                              <div className="flex gap-2">
+                                <dt className="text-gray-500 min-w-[90px]">
+                                  Resend ID:
+                                </dt>
+                                <dd className="text-gray-300 font-mono">
+                                  {it.resendId}
+                                </dd>
+                              </div>
+                            )}
+                            {it.error && (
+                              <div className="flex gap-2">
+                                <dt className="text-red-400 min-w-[90px]">
+                                  Error:
+                                </dt>
+                                <dd className="text-red-300">{it.error}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center py-12 text-gray-500">
+                    {search || status !== "all" || campaign
+                      ? "No hay resultados con esos filtros"
+                      : "Todavía no se enviaron emails"}
                   </td>
                 </tr>
               )}
