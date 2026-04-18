@@ -32,9 +32,9 @@ export default function PoweredByVitrio({
       <Image
         src="/vitrio-v2.png"
         alt="Vitrio"
-        width={44}
-        height={14}
-        className="h-3.5 w-auto object-contain opacity-50"
+        width={72}
+        height={24}
+        className="h-6 w-auto object-contain opacity-60"
       />
     </a>
   );
