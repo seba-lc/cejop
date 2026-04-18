@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { sendGraciasFeedback } from "@/lib/send-email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,6 +64,19 @@ export async function POST(req: NextRequest) {
     };
 
     const result = await collection.insertOne(document);
+
+    // Disparar email de gracias. Busca el nombre en encuestas si hay match,
+    // si no manda genérico. El helper tiene dedup propio.
+    try {
+      const encuesta = await db
+        .collection("encuestas")
+        .findOne({ "personal.mail": mail });
+      const nombre = encuesta?.personal?.nombre || "";
+      await sendGraciasFeedback({ mail, nombre });
+    } catch (err) {
+      console.error("Error enviando email de gracias por feedback:", err);
+      // No rompe la respuesta al usuario.
+    }
 
     return NextResponse.json(
       { success: true, id: result.insertedId },

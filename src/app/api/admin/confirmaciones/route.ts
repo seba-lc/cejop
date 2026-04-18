@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { sendConfirmacionAsistencia } from "@/lib/send-email";
 
 const CONFIRMACIONES_COLLECTION = "confirmaciones_encuentro_1";
 
@@ -92,6 +93,21 @@ export async function PATCH(req: NextRequest) {
       },
       { upsert: true }
     );
+
+    // Disparar email de confirmación solo al pasar a confirmado=true.
+    // El helper tiene dedup propio: si ya se envió antes, no reenvía.
+    if (confirmado) {
+      try {
+        const encuesta = await db
+          .collection("encuestas")
+          .findOne({ "personal.mail": mailLower });
+        const nombre = encuesta?.personal?.nombre || "";
+        await sendConfirmacionAsistencia({ mail: mailLower, nombre });
+      } catch (err) {
+        console.error("Error enviando email de confirmación:", err);
+        // No bloqueamos la respuesta: el toggle ya quedó persistido.
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
