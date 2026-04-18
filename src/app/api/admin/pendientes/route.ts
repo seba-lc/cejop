@@ -95,25 +95,14 @@ export async function PATCH(req: NextRequest) {
     const nuevoEstado: EstadoPendiente =
       accion === "approve" ? "approved" : accion === "reject" ? "rejected" : "pending";
 
-    await pendientes.updateOne(
-      { _id },
-      {
-        $set: {
-          estado: nuevoEstado,
-          resolvedAt: nuevoEstado === "pending" ? null : new Date(),
-        },
-      }
-    );
-
-    // Si aprobamos, insertar en asistentes_encuentro_1.
-    // El tipo depende de si estaba inscripto (lookup previo en encuestas).
+    // Si aprobamos: PRIMERO insertar en asistentes (si falla, el pendiente
+    // se queda en pending y el equipo puede reintentar). Solo después del
+    // insert exitoso actualizamos el estado del pendiente.
     if (nuevoEstado === "approved") {
       const mail = (doc.mail || "").toLowerCase();
       const asistentes = db.collection(ASISTENTES_COLLECTION);
 
-      const dupCheck = mail
-        ? await asistentes.findOne({ mail })
-        : null;
+      const dupCheck = mail ? await asistentes.findOne({ mail }) : null;
 
       if (!dupCheck) {
         const inscriptoFlag = !!doc.inscripto;
@@ -131,6 +120,16 @@ export async function PATCH(req: NextRequest) {
         });
       }
     }
+
+    await pendientes.updateOne(
+      { _id },
+      {
+        $set: {
+          estado: nuevoEstado,
+          resolvedAt: nuevoEstado === "pending" ? null : new Date(),
+        },
+      }
+    );
 
     return NextResponse.json({ success: true, estado: nuevoEstado });
   } catch (error) {
