@@ -7,20 +7,40 @@ export default function FloatingCTA() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => {
-      const scrolledPastHero =
-        window.scrollY > window.innerHeight * 0.8;
-      const atBottom =
-        window.scrollY + window.innerHeight >=
-        document.documentElement.scrollHeight - 80;
+    let pastHero = false;
+    let footerVisible = false;
 
-      // Se muestra si pasó el hero y no llegó al fondo.
-      // Al volver a scrollear arriba, reaparece.
-      setVisible(scrolledPastHero && !atBottom);
+    const update = () => {
+      setVisible(pastHero && !footerVisible);
     };
+
+    const onScroll = () => {
+      pastHero = window.scrollY > window.innerHeight * 0.8;
+      update();
+    };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+
+    // Observamos el <footer>: cuando entra en el viewport, ocultamos
+    // el CTA. Cuando sale, vuelve.
+    const footer = document.querySelector("footer");
+    let observer: IntersectionObserver | null = null;
+    if (footer) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          footerVisible = entries[0].isIntersecting;
+          update();
+        },
+        { threshold: 0, rootMargin: "0px 0px -40px 0px" }
+      );
+      observer.observe(footer);
+    }
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      observer?.disconnect();
+    };
   }, []);
 
   return (
