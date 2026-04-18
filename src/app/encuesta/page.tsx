@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -136,6 +136,7 @@ export default function EncuestaPage() {
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [priorityResponses, setPriorityResponses] = useState<Record<string, string>>({});
   const [videoSrc, setVideoSrc] = useState(VIDEO_URL);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const [encuestaCerrada, setEncuestaCerrada] = useState(false);
 
@@ -323,11 +324,19 @@ export default function EncuestaPage() {
       <div className="absolute inset-0 z-0">
         <video
           key={videoSrc}
+          ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
-          className="w-full h-full object-cover"
+          preload="auto"
+          controls={false}
+          disablePictureInPicture
+          disableRemotePlayback
+          onLoadedData={() => {
+            videoRef.current?.play().catch(() => {});
+          }}
+          className="w-full h-full object-cover pointer-events-none"
         >
           <source src={videoSrc} type="video/mp4" />
         </video>

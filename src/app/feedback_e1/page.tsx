@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import Image from "next/image";
@@ -109,6 +109,7 @@ export default function FeedbackE1Page() {
   const [form, setForm] = useState<FormData>(initialForm);
   const [videoSrc, setVideoSrc] = useState(VIDEO_URL);
   const [videoReady, setVideoReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const cookie = getCookie(COOKIE_NAME);
@@ -259,12 +260,20 @@ export default function FeedbackE1Page() {
       <div className="absolute inset-0 z-0">
         <video
           key={videoSrc}
+          ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
-          onLoadedData={() => setVideoReady(true)}
-          className="w-full h-full object-cover"
+          preload="auto"
+          controls={false}
+          disablePictureInPicture
+          disableRemotePlayback
+          onLoadedData={() => {
+            setVideoReady(true);
+            videoRef.current?.play().catch(() => {});
+          }}
+          className="w-full h-full object-cover pointer-events-none"
         >
           <source src={videoSrc} type="video/mp4" />
         </video>
