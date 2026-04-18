@@ -99,10 +99,17 @@ export default function FeedbackE1Page() {
   const [direction, setDirection] = useState(1);
   const [form, setForm] = useState<FormData>(initialForm);
   const [videoSrc, setVideoSrc] = useState(VIDEO_URL);
+  const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
     const cookie = getCookie(COOKIE_NAME);
     if (cookie) setAlreadyDone(true);
+  }, []);
+
+  // Safety: no dejar al usuario esperando más de 5s si el video no llega
+  useEffect(() => {
+    const t = setTimeout(() => setVideoReady(true), 5000);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -247,6 +254,7 @@ export default function FeedbackE1Page() {
           muted
           loop
           playsInline
+          onLoadedData={() => setVideoReady(true)}
           className="w-full h-full object-cover"
         >
           <source src={videoSrc} type="video/mp4" />
@@ -294,6 +302,23 @@ export default function FeedbackE1Page() {
                 </p>
                 <p className="font-source text-white/50 text-sm leading-relaxed max-w-sm mx-auto">
                   Nos vemos en el próximo encuentro.
+                </p>
+              </motion.div>
+            ) : !videoReady ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="flex flex-col items-center justify-center py-24"
+              >
+                <div
+                  className="w-10 h-10 border-2 border-white/15 border-t-cejop-blue-light rounded-full animate-spin"
+                  aria-label="Cargando"
+                />
+                <p className="mt-6 font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-white/40">
+                  Cargando
                 </p>
               </motion.div>
             ) : submitted ? (
