@@ -20,6 +20,7 @@ import {
   Mail,
   AlertCircle,
   Send,
+  UserPlus,
 } from "lucide-react";
 import {
   BarChart,
@@ -73,6 +74,7 @@ const PIE_COLORS = [
 const TABS = [
   { id: "panel", label: "Panel", icon: BarChart3 },
   { id: "confirmados", label: "Confirmados", icon: CheckCircle2 },
+  { id: "acreditados", label: "Acreditados", icon: UserPlus },
   { id: "emails", label: "Emails", icon: Mail },
   { id: "prioridades", label: "Prioridades", icon: ClipboardList },
   { id: "dirigentes", label: "Dirigentes", icon: UserCheck },
@@ -361,6 +363,7 @@ export default function AdminDashboard() {
           />
         )}
         {activeTab === "confirmados" && <TabConfirmados />}
+        {activeTab === "acreditados" && <TabAsistentes />}
         {activeTab === "emails" && <TabEmailsLog />}
         {activeTab === "prioridades" && (
           <TabPrioridades
@@ -1936,6 +1939,332 @@ function TabEmailsLog() {
                     {search || status !== "all" || campaign
                       ? "No hay resultados con esos filtros"
                       : "Todavía no se enviaron emails"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ── Tab: Asistentes acreditados ── */
+
+type AsistenteItem = {
+  id: string;
+  mail: string;
+  nombre: string;
+  telefono: string;
+  tipo: "confirmado" | "inscripto_no_confirmado" | "walk_in";
+  inscripto: boolean;
+  confirmado: boolean;
+  createdAt: string | null;
+};
+
+type AsistenteTipoFilter =
+  | "all"
+  | "confirmado"
+  | "inscripto_no_confirmado"
+  | "walk_in";
+
+type AsistenteCounts = {
+  total: number;
+  confirmado: number;
+  inscripto_no_confirmado: number;
+  walk_in: number;
+};
+
+function TabAsistentes() {
+  const [items, setItems] = useState<AsistenteItem[]>([]);
+  const [counts, setCounts] = useState<AsistenteCounts | null>(null);
+  const [search, setSearch] = useState("");
+  const [tipo, setTipo] = useState<AsistenteTipoFilter>("all");
+  const [loading, setLoading] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (tipo !== "all") params.set("tipo", tipo);
+
+    const res = await fetch(`/api/admin/asistentes?${params}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setItems(data.items || []);
+    setCounts(data.counts || null);
+  }, [search, tipo]);
+
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
+
+  // Auto-refresh cada 10s (útil durante el evento para ver el flujo en vivo)
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(() => {
+      fetchData();
+    }, 10000);
+    return () => clearInterval(id);
+  }, [autoRefresh, fetchData]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-cejop-blue border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  function exportCSV() {
+    const headers = [
+      "Nombre",
+      "Email",
+      "Teléfono",
+      "Tipo",
+      "Inscripto previo",
+      "Confirmado previo",
+      "Acreditado",
+    ];
+    const rows = items.map((it) => [
+      it.nombre,
+      it.mail,
+      it.telefono,
+      it.tipo === "confirmado"
+        ? "Confirmado"
+        : it.tipo === "inscripto_no_confirmado"
+          ? "Inscripto"
+          : "Walk-in",
+      it.inscripto ? "Sí" : "No",
+      it.confirmado ? "Sí" : "No",
+      it.createdAt ? new Date(it.createdAt).toLocaleString("es-AR") : "",
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `acreditados-cejop-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="space-y-6">
+      <SectionTitle>Acreditados — Primer encuentro</SectionTitle>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Users size={16} className="text-cejop-blue" />
+            <span className="text-sm text-gray-400 font-medium">Total</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.total || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 size={16} className="text-green-400" />
+            <span className="text-sm text-gray-400 font-medium">
+              Confirmados
+            </span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.confirmado || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <ClipboardList size={16} className="text-blue-300" />
+            <span className="text-sm text-gray-400 font-medium">
+              Inscriptos
+            </span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.inscripto_no_confirmado || 0}
+          </p>
+        </Card>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <UserPlus size={16} className="text-purple-300" />
+            <span className="text-sm text-gray-400 font-medium">Walk-ins</span>
+          </div>
+          <p className="text-3xl font-bold text-white font-montserrat">
+            {counts?.walk_in || 0}
+          </p>
+        </Card>
+      </div>
+
+      {/* Controls */}
+      <Card>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cejop-blue transition-colors"
+            />
+          </div>
+          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
+            {(
+              [
+                { id: "all", label: "Todos" },
+                { id: "confirmado", label: "Confirm." },
+                { id: "inscripto_no_confirmado", label: "Inscript." },
+                { id: "walk_in", label: "Walk-in" },
+              ] as { id: AsistenteTipoFilter; label: string }[]
+            ).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setTipo(f.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                  tipo === f.id
+                    ? "bg-cejop-blue text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAutoRefresh((v) => !v)}
+              className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-xs font-medium transition-colors ${
+                autoRefresh
+                  ? "border-green-500/30 bg-green-500/10 text-green-300"
+                  : "border-white/10 bg-white/5 text-gray-400 hover:text-white"
+              }`}
+              title="Actualiza la lista cada 10s automáticamente"
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  autoRefresh ? "bg-green-400 animate-pulse" : "bg-gray-500"
+                }`}
+              />
+              Live
+            </button>
+            <button
+              onClick={exportCSV}
+              disabled={items.length === 0}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                items.length === 0
+                  ? "bg-white/5 text-gray-600 cursor-not-allowed"
+                  : "bg-cejop-blue text-white hover:bg-cejop-blue/90"
+              }`}
+            >
+              <Download size={14} />
+              CSV
+            </button>
+          </div>
+        </div>
+      </Card>
+
+      {/* List */}
+      <Card className="!p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="text-left px-4 sm:px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
+                  Email
+                </th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">
+                  Teléfono
+                </th>
+                <th className="text-left px-4 sm:px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="text-right px-4 sm:px-6 py-3 font-semibold text-gray-400 text-xs uppercase tracking-wider hidden sm:table-cell">
+                  Hora
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((it) => (
+                <tr
+                  key={it.id}
+                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                >
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-white">
+                    <div>{it.nombre || "—"}</div>
+                    <div className="md:hidden text-xs text-gray-500 font-normal mt-0.5 truncate">
+                      {it.mail}
+                    </div>
+                    {it.telefono && (
+                      <div className="md:hidden text-[11px] text-gray-500 font-normal mt-0.5">
+                        {it.telefono}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-gray-400 hidden md:table-cell">
+                    {it.mail}
+                  </td>
+                  <td className="px-6 py-4 text-gray-400 hidden md:table-cell">
+                    {it.telefono || "—"}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${
+                        it.tipo === "walk_in"
+                          ? "bg-purple-500/20 text-purple-300"
+                          : it.tipo === "confirmado"
+                            ? "bg-green-500/20 text-green-300"
+                            : "bg-blue-500/20 text-blue-300"
+                      }`}
+                    >
+                      {it.tipo === "walk_in"
+                        ? "Walk-in"
+                        : it.tipo === "confirmado"
+                          ? "Confirmado"
+                          : "Inscripto"}
+                    </span>
+                    {/* En mobile ponemos la hora debajo del badge */}
+                    <div className="sm:hidden text-[11px] text-gray-500 mt-1">
+                      {it.createdAt
+                        ? new Date(it.createdAt).toLocaleTimeString("es-AR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right text-gray-400 hidden sm:table-cell whitespace-nowrap">
+                    {it.createdAt
+                      ? new Date(it.createdAt).toLocaleString("es-AR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center py-12 text-gray-500">
+                    {search || tipo !== "all"
+                      ? "No hay resultados con esos filtros"
+                      : "Todavía no hay acreditados"}
                   </td>
                 </tr>
               )}
