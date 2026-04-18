@@ -79,6 +79,15 @@ const steps = [
 
 const COOKIE_NAME = "cejop_feedback_e1_done";
 
+const introItem = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  },
+};
+
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
   return match ? decodeURIComponent(match[2]) : null;
@@ -354,32 +363,54 @@ export default function FeedbackE1Page() {
             ) : (
               <motion.div
                 key={`step-${currentStep}`}
-                initial={{ opacity: 0, x: direction * 60 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={isIntro ? { opacity: 0, y: 28, scale: 0.97 } : { opacity: 0, x: direction * 60 }}
+                animate={isIntro ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: direction * -60 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: isIntro ? 0.75 : 0.35, ease: [0.16, 1, 0.3, 1] }}
               >
                 {isIntro ? (
                   /* ── Intro ── */
-                  <div>
-                    <span className="inline-block font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3">
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 1 },
+                      visible: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.08, delayChildren: 0.25 },
+                      },
+                    }}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <motion.span
+                      variants={introItem}
+                      className="inline-block font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3"
+                    >
                       Primer encuentro · CEJOP Tucumán
-                    </span>
+                    </motion.span>
 
-                    <h1 className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-6">
+                    <motion.h1
+                      variants={introItem}
+                      className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-6"
+                    >
                       Contanos cómo lo viviste
-                    </h1>
+                    </motion.h1>
 
                     <div className="space-y-5 mb-10">
-                      <div className="border-l-2 border-white/20 pl-4">
+                      <motion.div
+                        variants={introItem}
+                        className="border-l-2 border-white/20 pl-4"
+                      >
                         <p className="font-source text-[15px] text-white/80 leading-relaxed">
                           Estuviste en la Mesa Panel de Intendentes. Tu
                           opinión define cómo armamos los próximos encuentros
                           del año.
                         </p>
-                      </div>
+                      </motion.div>
 
-                      <div className="border-l-2 border-cejop-blue pl-4">
+                      <motion.div
+                        variants={introItem}
+                        className="border-l-2 border-cejop-blue pl-4"
+                      >
                         <p className="font-source text-[15px] text-white/80 leading-relaxed">
                           Son{" "}
                           <strong className="text-white">
@@ -388,10 +419,11 @@ export default function FeedbackE1Page() {
                           . Sin vueltas. Tu respuesta queda registrada de
                           forma confidencial.
                         </p>
-                      </div>
+                      </motion.div>
                     </div>
 
-                    <button
+                    <motion.button
+                      variants={introItem}
                       onClick={next}
                       className="w-full flex items-center justify-center gap-3 font-montserrat font-bold text-sm tracking-wide py-4 bg-white text-cejop-dark hover:bg-white/90 hover:shadow-lg hover:shadow-white/10 transition-all duration-300 group"
                     >
@@ -400,8 +432,8 @@ export default function FeedbackE1Page() {
                         size={16}
                         className="transition-transform group-hover:translate-x-1"
                       />
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
                 ) : (
                   /* ── Form steps ── */
                   <>
