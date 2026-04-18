@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import brandLogo from "@/assets/cejop_brand_cropped.png";
-import PoweredByVitrio from "@/components/PoweredByVitrio";
 import { markEncuestaCompleted, isEncuestaCompleted } from "@/components/SurveyGate";
 import {
   trackEncuestaStart,
@@ -359,15 +358,6 @@ export default function EncuestaPage() {
           </div>
         </a>
       </header>
-
-      {/* Credit footer */}
-      <div
-        className="absolute bottom-0 left-0 right-0 z-20 flex justify-center pb-[max(env(safe-area-inset-bottom),12px)] pt-3 pointer-events-none"
-      >
-        <div className="pointer-events-auto">
-          <PoweredByVitrio location="encuesta" theme="dark" />
-        </div>
-      </div>
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-4 py-6 sm:px-6">

@@ -3,7 +3,7 @@
  * Permite a Vitrio ver desde qué ubicación del sitio CEJOP viene el tráfico.
  */
 
-export const VITRIO_URL = "https://vitrio.ar";
+export const VITRIO_URL = "https://vitrio.tech";
 
 export function buildVitrioUrl(location: string): string {
   const params = new URLSearchParams({
