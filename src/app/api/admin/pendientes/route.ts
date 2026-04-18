@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       edad: d.edad ?? null,
       telefono: d.telefono || "",
       telefonoNorm: d.telefonoNorm || "",
+      inscripto: !!d.inscripto,
       estado: (d.estado || "pending") as EstadoPendiente,
       createdAt: d.createdAt || null,
       resolvedAt: d.resolvedAt || null,
@@ -104,7 +105,8 @@ export async function PATCH(req: NextRequest) {
       }
     );
 
-    // Si aprobamos, insertar en asistentes_encuentro_1 como walk_in
+    // Si aprobamos, insertar en asistentes_encuentro_1.
+    // El tipo depende de si estaba inscripto (lookup previo en encuestas).
     if (nuevoEstado === "approved") {
       const mail = (doc.mail || "").toLowerCase();
       const asistentes = db.collection(ASISTENTES_COLLECTION);
@@ -114,12 +116,14 @@ export async function PATCH(req: NextRequest) {
         : null;
 
       if (!dupCheck) {
+        const inscriptoFlag = !!doc.inscripto;
+        const tipo = inscriptoFlag ? "inscripto_no_confirmado" : "walk_in";
         await asistentes.insertOne({
           mail,
           nombre: doc.nombre || "",
           telefono: doc.telefono || "",
-          tipo: "walk_in",
-          inscripto: false,
+          tipo,
+          inscripto: inscriptoFlag,
           confirmado: false,
           encuentro: "e1",
           createdAt: new Date(),

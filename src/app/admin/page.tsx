@@ -2842,6 +2842,7 @@ type PendienteItem = {
   edad: number | null;
   telefono: string;
   telefonoNorm: string;
+  inscripto: boolean;
   estado: "pending" | "approved" | "rejected";
   createdAt: string | null;
   resolvedAt: string | null;
@@ -3037,9 +3038,20 @@ function TabPendientes() {
             <div className="p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex-1 min-w-[180px]">
-                  <p className="font-montserrat font-semibold text-white text-[15px]">
-                    {it.nombre || "(sin nombre)"}
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-montserrat font-semibold text-white text-[15px]">
+                      {it.nombre || "(sin nombre)"}
+                    </p>
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        it.inscripto
+                          ? "bg-blue-500/20 text-blue-300"
+                          : "bg-purple-500/20 text-purple-300"
+                      }`}
+                    >
+                      {it.inscripto ? "Inscripto" : "Walk-in"}
+                    </span>
+                  </div>
                   <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
                     <Phone size={12} className="text-cejop-blue" />
                     <span className="font-mono">{it.telefono}</span>

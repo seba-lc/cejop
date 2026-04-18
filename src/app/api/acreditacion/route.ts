@@ -147,50 +147,92 @@ export async function POST(req: NextRequest) {
         ) || null;
     }
 
-    // ═══════ Camino A: inscripto → acredita en asistentes_encuentro_1 ═══════
+    // ═══════ Camino A: inscripto + confirmado → acredita directo ═══════
     if (encuesta) {
       const leadMail = String(encuesta.personal?.mail || mail).toLowerCase();
       const confirmacion = await db
         .collection(CONFIRMACIONES_COLLECTION)
         .findOne({ mail: leadMail });
       const confirmado = !!confirmacion?.confirmado;
-      const tipo: AsistenteTipo = confirmado
-        ? "confirmado"
-        : "inscripto_no_confirmado";
-
       const leadNombre = encuesta.personal?.nombre || nombre || "";
       const leadTel = encuesta.personal?.telefono || telefonoRaw || "";
+      const leadEdad = encuesta.personal?.edad || edadNum || null;
+      const leadTelNorm = normalizePhone(leadTel);
 
-      const coll = db.collection(ASISTENTES_COLLECTION);
-      const existing = await coll.findOne({ mail: leadMail });
+      // A.1 — Confirmado: acredita directo en asistentes_encuentro_1
+      if (confirmado) {
+        const coll = db.collection(ASISTENTES_COLLECTION);
+        const existing = await coll.findOne({ mail: leadMail });
 
-      if (existing) {
+        if (existing) {
+          return NextResponse.json({
+            success: true,
+            mode: "acreditado",
+            duplicate: true,
+            tipo: existing.tipo || "confirmado",
+            nombre: existing.nombre || leadNombre,
+          });
+        }
+
+        await coll.insertOne({
+          mail: leadMail,
+          nombre: leadNombre,
+          telefono: leadTel,
+          tipo: "confirmado",
+          inscripto: true,
+          confirmado: true,
+          encuentro: "e1",
+          createdAt: new Date(),
+        });
+
         return NextResponse.json({
           success: true,
           mode: "acreditado",
-          duplicate: true,
-          tipo: existing.tipo || tipo,
-          nombre: existing.nombre || leadNombre,
+          duplicate: false,
+          tipo: "confirmado",
+          nombre: leadNombre,
         });
       }
 
-      await coll.insertOne({
-        mail: leadMail,
+      // A.2 — Inscripto sin confirmar: queda en pendientes (con datos ya
+      //       prellenados de la encuesta) para que admin decida
+      const pendientes = db.collection(PENDIENTES_COLLECTION);
+      const existingPending = await pendientes.findOne({
+        $or: [
+          { mail: leadMail },
+          { telefonoNorm: leadTelNorm },
+        ],
+      });
+
+      if (existingPending) {
+        // Ya está en cola o resuelto — devolvemos el estado actual
+        return NextResponse.json({
+          success: true,
+          mode: "pendiente",
+          inscripto: true,
+          duplicate: true,
+          estado: existingPending.estado || "pending",
+        });
+      }
+
+      await pendientes.insertOne({
         nombre: leadNombre,
+        mail: leadMail,
+        edad: leadEdad,
         telefono: leadTel,
-        tipo,
+        telefonoNorm: leadTelNorm,
         inscripto: true,
-        confirmado,
+        estado: "pending",
         encuentro: "e1",
         createdAt: new Date(),
       });
 
       return NextResponse.json({
         success: true,
-        mode: "acreditado",
+        mode: "pendiente",
+        inscripto: true,
         duplicate: false,
-        tipo,
-        nombre: leadNombre,
+        estado: "pending",
       });
     }
 
@@ -209,7 +251,6 @@ export async function POST(req: NextRequest) {
     }
 
     const pendientes = db.collection(PENDIENTES_COLLECTION);
-    // Dedup: si ya hay un pendiente por mismo mail o tel, no duplicar
     const existingPending = await pendientes.findOne({
       $or: [
         ...(mail ? [{ mail }] : []),
@@ -221,6 +262,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         mode: "pendiente",
+        inscripto: false,
         duplicate: true,
         estado: existingPending.estado || "pending",
       });
@@ -232,6 +274,7 @@ export async function POST(req: NextRequest) {
       edad: edadNum,
       telefono: telefonoRaw,
       telefonoNorm,
+      inscripto: false,
       estado: "pending",
       encuentro: "e1",
       createdAt: new Date(),
@@ -240,6 +283,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       mode: "pendiente",
+      inscripto: false,
       duplicate: false,
       estado: "pending",
     });

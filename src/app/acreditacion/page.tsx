@@ -143,12 +143,20 @@ export default function AcreditacionPage() {
         setErrorMsg(json.error || "Error al registrar");
         return;
       }
-      setScreen({
-        kind: "success-acreditado",
-        tipo: json.tipo,
-        nombre: json.nombre || data.nombre,
-        duplicate: !!json.duplicate,
-      });
+      if (json.mode === "acreditado") {
+        setScreen({
+          kind: "success-acreditado",
+          tipo: json.tipo,
+          nombre: json.nombre || data.nombre,
+          duplicate: !!json.duplicate,
+        });
+      } else if (json.mode === "pendiente") {
+        // Inscripto sin confirmar → queda en cola de pendientes
+        setScreen({
+          kind: "success-pendiente",
+          duplicate: !!json.duplicate,
+        });
+      }
     } catch {
       setErrorMsg("No se pudo conectar, intentá de nuevo");
     } finally {
@@ -385,14 +393,14 @@ export default function AcreditacionPage() {
                 <span className="inline-block font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3">
                   {screen.data.tipo === "confirmado"
                     ? "Estás en la lista"
-                    : "Te encontramos"}
+                    : "Estás inscripto/a"}
                 </span>
 
                 <h1 className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-4">
                   ¿Sos {screen.data.nombre.split(" ")[0] || "vos"}?
                 </h1>
 
-                <div className="bg-white/[0.07] border border-white/10 p-5 mb-8 space-y-2">
+                <div className="bg-white/[0.07] border border-white/10 p-5 mb-6 space-y-2">
                   <p className="font-source text-[15px] text-white/90">
                     <strong className="font-semibold">{screen.data.nombre}</strong>
                   </p>
@@ -408,11 +416,17 @@ export default function AcreditacionPage() {
                   )}
                 </div>
 
-                {screen.data.yaAcreditado && (
+                {screen.data.yaAcreditado ? (
                   <p className="font-source text-[13px] text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3">
                     Ya estás acreditado/a. Pasá nomás.
                   </p>
-                )}
+                ) : screen.data.tipo === "inscripto_no_confirmado" ? (
+                  <p className="font-source text-[13px] text-white/60 mb-6 border-l-2 border-yellow-500/50 pl-3">
+                    Completaste la inscripción, pero tu lugar todavía no está
+                    confirmado. Tocá <strong className="text-white">Pedir entrar</strong> y
+                    el equipo te confirma en la mesa.
+                  </p>
+                ) : null}
 
                 {errorMsg && (
                   <p className="font-source text-xs text-red-400 mb-3">
@@ -426,7 +440,13 @@ export default function AcreditacionPage() {
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-3 font-montserrat font-bold text-sm tracking-wide py-4 bg-white text-cejop-dark hover:bg-white/90 transition-all duration-300 group"
                   >
-                    {loading ? "Acreditando..." : "Sí, soy yo"}
+                    {loading
+                      ? screen.data.tipo === "confirmado"
+                        ? "Acreditando..."
+                        : "Enviando..."
+                      : screen.data.tipo === "confirmado"
+                        ? "Sí, soy yo"
+                        : "Sí, soy yo — pedir entrar"}
                     {!loading && (
                       <ArrowRight
                         size={16}
