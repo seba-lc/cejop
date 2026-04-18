@@ -17,7 +17,7 @@ export default function ConfirmacionAsistencia({
 }: ConfirmacionAsistenciaProps) {
   const firstName = (nombre || "").split(" ")[0] || "";
   return (
-    <EmailShell preview="Quedaste adentro. Viernes 18/4, 14:30, Alcurnia SMT.">
+    <EmailShell preview="Quedaste adentro. Sábado 18/4, 14:30, Alcurnia SMT.">
       <Title>
         {firstName
           ? `${firstName}, quedaste adentro`
@@ -60,7 +60,7 @@ export default function ConfirmacionAsistencia({
             margin: "0 0 6px 0",
           }}
         >
-          Viernes 18 de abril, 14:30 hs
+          Sábado 18 de abril, 14:30 hs
         </Text>
         <Text
           style={{
