@@ -46,3 +46,17 @@ data/audio-e1/*.mp3
 data/audio-e1/*.m4a
 data/audio-e1/*.wav
 public/audio/*.mp3
+
+# transcripciones literales del encuentro 1 (texto crudo de lo dicho por los intendentes)
+# Solo se commitea data/audio-e1/analysis/ (métricas agregadas que consume el dashboard).
+data/audio-e1/transcripcion/
+data/audio-e1/transcripcion-crudo-v1/
+
+# python tooling
+tools/whisperx-venv/
+tools/__pycache__/
+tools/*.pyc
+
+# playwright / test artifacts
+test-results/
+playwright-report/

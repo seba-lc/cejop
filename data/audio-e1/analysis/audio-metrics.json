@@ -1,0 +1,102 @@
+{
+  "duration_seconds": 4643,
+  "pending_applause_detection": true,
+  "pending_laughter_detection": true,
+  "pending_pitch_analysis": true,
+  "pending_long_pauses": true,
+  "claps": [],
+  "laughs": [],
+  "long_pauses": [],
+  "speakers": {
+    "MANSILLA (Aguilares · PJ)": {
+      "speaking_time_s": 598,
+      "turns": 3,
+      "words": 1236,
+      "ppm": 124.0,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "MOLINUEVO (Concepción · UCR)": {
+      "speaking_time_s": 1085,
+      "turns": 7,
+      "words": 2039,
+      "ppm": 112.8,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "SERRA (Monteros · PJ)": {
+      "speaking_time_s": 693,
+      "turns": 5,
+      "words": 1505,
+      "ppm": 130.3,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "CHAHLA (SMT · PJ)": {
+      "speaking_time_s": 1466,
+      "turns": 8,
+      "words": 3843,
+      "ppm": 157.3,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "(voz breve)": {
+      "speaking_time_s": 134,
+      "turns": 3,
+      "words": 210,
+      "ppm": 94.0,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "Ramiro Coromina (público · UNT)": {
+      "speaking_time_s": 49,
+      "turns": 1,
+      "words": 139,
+      "ppm": 170.2,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "Matías Rodríguez (público)": {
+      "speaking_time_s": 127,
+      "turns": 3,
+      "words": 270,
+      "ppm": 127.6,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "Moderador": {
+      "speaking_time_s": 30,
+      "turns": 1,
+      "words": 96,
+      "ppm": 192.0,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "?": {
+      "speaking_time_s": 28,
+      "turns": 1,
+      "words": 49,
+      "ppm": 105.0,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    },
+    "Enzo Ferreira (público · LLA)": {
+      "speaking_time_s": 103,
+      "turns": 1,
+      "words": 246,
+      "ppm": 143.3,
+      "pitch_mean_hz": null,
+      "pitch_std_hz": null,
+      "energy_mean": null
+    }
+  }
+}

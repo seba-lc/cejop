@@ -1,0 +1,750 @@
+{
+  "pending_sentiment_ml": true,
+  "pending_topic_modeling": true,
+  "sentiment_by_speaker": {},
+  "sentiment_timeline": [],
+  "keywords_by_speaker": {
+    "MANSILLA (Aguilares · PJ)": [
+      {
+        "word": "ejemplo",
+        "count": 10
+      },
+      {
+        "word": "tenemos",
+        "count": 9
+      },
+      {
+        "word": "pymes",
+        "count": 8
+      },
+      {
+        "word": "empresa",
+        "count": 8
+      },
+      {
+        "word": "celular",
+        "count": 7
+      },
+      {
+        "word": "está",
+        "count": 7
+      },
+      {
+        "word": "diferentes",
+        "count": 7
+      },
+      {
+        "word": "muchos",
+        "count": 7
+      },
+      {
+        "word": "situación",
+        "count": 6
+      },
+      {
+        "word": "muchas",
+        "count": 5
+      },
+      {
+        "word": "hacer",
+        "count": 5
+      },
+      {
+        "word": "quizás",
+        "count": 5
+      },
+      {
+        "word": "tienen",
+        "count": 5
+      },
+      {
+        "word": "talleres",
+        "count": 5
+      },
+      {
+        "word": "aguilares",
+        "count": 5
+      }
+    ],
+    "MOLINUEVO (Concepción · UCR)": [
+      {
+        "word": "tenemos",
+        "count": 16
+      },
+      {
+        "word": "tienen",
+        "count": 11
+      },
+      {
+        "word": "hacer",
+        "count": 10
+      },
+      {
+        "word": "ejemplo",
+        "count": 8
+      },
+      {
+        "word": "celular",
+        "count": 7
+      },
+      {
+        "word": "tucumán",
+        "count": 7
+      },
+      {
+        "word": "cuánto",
+        "count": 6
+      },
+      {
+        "word": "vamos",
+        "count": 5
+      },
+      {
+        "word": "estoy",
+        "count": 5
+      },
+      {
+        "word": "profesionales",
+        "count": 5
+      },
+      {
+        "word": "nuestro",
+        "count": 5
+      },
+      {
+        "word": "municipio",
+        "count": 5
+      },
+      {
+        "word": "jóvenes",
+        "count": 5
+      },
+      {
+        "word": "muchos",
+        "count": 5
+      },
+      {
+        "word": "corte",
+        "count": 5
+      }
+    ],
+    "SERRA (Monteros · PJ)": [
+      {
+        "word": "poder",
+        "count": 10
+      },
+      {
+        "word": "desde",
+        "count": 9
+      },
+      {
+        "word": "tiene",
+        "count": 8
+      },
+      {
+        "word": "nuestro",
+        "count": 8
+      },
+      {
+        "word": "país",
+        "count": 7
+      },
+      {
+        "word": "nacional",
+        "count": 6
+      },
+      {
+        "word": "tenemos",
+        "count": 6
+      },
+      {
+        "word": "muchas",
+        "count": 5
+      },
+      {
+        "word": "seguramente",
+        "count": 5
+      },
+      {
+        "word": "nuestros",
+        "count": 5
+      },
+      {
+        "word": "gobierno",
+        "count": 5
+      },
+      {
+        "word": "lugar",
+        "count": 5
+      },
+      {
+        "word": "trabajo",
+        "count": 5
+      },
+      {
+        "word": "través",
+        "count": 5
+      },
+      {
+        "word": "iniciativa",
+        "count": 4
+      }
+    ],
+    "CHAHLA (SMT · PJ)": [
+      {
+        "word": "tenemos",
+        "count": 30
+      },
+      {
+        "word": "gente",
+        "count": 23
+      },
+      {
+        "word": "tiene",
+        "count": 22
+      },
+      {
+        "word": "hacer",
+        "count": 22
+      },
+      {
+        "word": "tener",
+        "count": 18
+      },
+      {
+        "word": "está",
+        "count": 16
+      },
+      {
+        "word": "cosas",
+        "count": 14
+      },
+      {
+        "word": "puede",
+        "count": 12
+      },
+      {
+        "word": "esto",
+        "count": 12
+      },
+      {
+        "word": "entonces",
+        "count": 12
+      },
+      {
+        "word": "tengo",
+        "count": 12
+      },
+      {
+        "word": "quiero",
+        "count": 11
+      },
+      {
+        "word": "desde",
+        "count": 10
+      },
+      {
+        "word": "decir",
+        "count": 9
+      },
+      {
+        "word": "tienen",
+        "count": 9
+      }
+    ],
+    "(voz breve)": [
+      {
+        "word": "gracias",
+        "count": 7
+      },
+      {
+        "word": "problema",
+        "count": 4
+      },
+      {
+        "word": "antes",
+        "count": 3
+      },
+      {
+        "word": "tucumán",
+        "count": 2
+      },
+      {
+        "word": "competencia",
+        "count": 2
+      },
+      {
+        "word": "verdad",
+        "count": 2
+      },
+      {
+        "word": "empresas",
+        "count": 2
+      },
+      {
+        "word": "piensan",
+        "count": 2
+      },
+      {
+        "word": "viene",
+        "count": 2
+      },
+      {
+        "word": "provincia",
+        "count": 2
+      },
+      {
+        "word": "estar",
+        "count": 2
+      },
+      {
+        "word": "muchísimas",
+        "count": 2
+      },
+      {
+        "word": "vale",
+        "count": 1
+      },
+      {
+        "word": "roto",
+        "count": 1
+      },
+      {
+        "word": "mano",
+        "count": 1
+      }
+    ],
+    "Ramiro Coromina (público · UNT)": [
+      {
+        "word": "estudiante",
+        "count": 2
+      },
+      {
+        "word": "universidad",
+        "count": 2
+      },
+      {
+        "word": "tucumán",
+        "count": 2
+      },
+      {
+        "word": "solo",
+        "count": 2
+      },
+      {
+        "word": "estudiantes",
+        "count": 2
+      },
+      {
+        "word": "primaria",
+        "count": 2
+      },
+      {
+        "word": "léficit",
+        "count": 2
+      },
+      {
+        "word": "buenas",
+        "count": 1
+      },
+      {
+        "word": "tardes",
+        "count": 1
+      },
+      {
+        "word": "ramiro",
+        "count": 1
+      },
+      {
+        "word": "coromina",
+        "count": 1
+      },
+      {
+        "word": "derecho",
+        "count": 1
+      },
+      {
+        "word": "nacional",
+        "count": 1
+      },
+      {
+        "word": "relaciones",
+        "count": 1
+      },
+      {
+        "word": "internacionales",
+        "count": 1
+      }
+    ],
+    "Matías Rodríguez (público)": [
+      {
+        "word": "municipio",
+        "count": 4
+      },
+      {
+        "word": "rápida",
+        "count": 3
+      },
+      {
+        "word": "educación",
+        "count": 3
+      },
+      {
+        "word": "tienen",
+        "count": 3
+      },
+      {
+        "word": "gracias",
+        "count": 3
+      },
+      {
+        "word": "tiene",
+        "count": 3
+      },
+      {
+        "word": "quiero",
+        "count": 2
+      },
+      {
+        "word": "preguntarle",
+        "count": 2
+      },
+      {
+        "word": "cuáles",
+        "count": 2
+      },
+      {
+        "word": "profesionales",
+        "count": 2
+      },
+      {
+        "word": "creen",
+        "count": 2
+      },
+      {
+        "word": "psicomotricista",
+        "count": 2
+      },
+      {
+        "word": "ocupacional",
+        "count": 2
+      },
+      {
+        "word": "dijo",
+        "count": 2
+      },
+      {
+        "word": "centro",
+        "count": 2
+      }
+    ],
+    "Moderador": [
+      {
+        "word": "ahora",
+        "count": 1
+      },
+      {
+        "word": "vamos",
+        "count": 1
+      },
+      {
+        "word": "segundo",
+        "count": 1
+      },
+      {
+        "word": "bloque",
+        "count": 1
+      },
+      {
+        "word": "desarrollo",
+        "count": 1
+      },
+      {
+        "word": "económico",
+        "count": 1
+      },
+      {
+        "word": "primeros",
+        "count": 1
+      },
+      {
+        "word": "chicos",
+        "count": 1
+      },
+      {
+        "word": "chicas",
+        "count": 1
+      },
+      {
+        "word": "acompañan",
+        "count": 1
+      },
+      {
+        "word": "emocionaban",
+        "count": 1
+      },
+      {
+        "word": "decíamos",
+        "count": 1
+      },
+      {
+        "word": "quedamos",
+        "count": 1
+      },
+      {
+        "word": "darles",
+        "count": 1
+      },
+      {
+        "word": "tratos",
+        "count": 1
+      }
+    ],
+    "?": [
+      {
+        "word": "pregunta",
+        "count": 2
+      },
+      {
+        "word": "inversiones",
+        "count": 2
+      },
+      {
+        "word": "camino",
+        "count": 2
+      },
+      {
+        "word": "gobierno",
+        "count": 1
+      },
+      {
+        "word": "nacional",
+        "count": 1
+      },
+      {
+        "word": "creado",
+        "count": 1
+      },
+      {
+        "word": "objetivos",
+        "count": 1
+      },
+      {
+        "word": "grandes",
+        "count": 1
+      },
+      {
+        "word": "medianas",
+        "count": 1
+      },
+      {
+        "word": "pequeñas",
+        "count": 1
+      },
+      {
+        "word": "empresas",
+        "count": 1
+      },
+      {
+        "word": "municipios",
+        "count": 1
+      },
+      {
+        "word": "entrar",
+        "count": 1
+      },
+      {
+        "word": "primeros",
+        "count": 1
+      },
+      {
+        "word": "piensan",
+        "count": 1
+      }
+    ],
+    "Enzo Ferreira (público · LLA)": [
+      {
+        "word": "sabemos",
+        "count": 4
+      },
+      {
+        "word": "gasta",
+        "count": 4
+      },
+      {
+        "word": "pregunta",
+        "count": 3
+      },
+      {
+        "word": "pocos",
+        "count": 3
+      },
+      {
+        "word": "recursos",
+        "count": 3
+      },
+      {
+        "word": "precisiones",
+        "count": 3
+      },
+      {
+        "word": "cómo",
+        "count": 3
+      },
+      {
+        "word": "intendentes",
+        "count": 2
+      },
+      {
+        "word": "hacer",
+        "count": 2
+      },
+      {
+        "word": "recién",
+        "count": 2
+      },
+      {
+        "word": "rosana",
+        "count": 2
+      },
+      {
+        "word": "decía",
+        "count": 2
+      },
+      {
+        "word": "tenemos",
+        "count": 2
+      },
+      {
+        "word": "muchas",
+        "count": 2
+      },
+      {
+        "word": "entonces",
+        "count": 2
+      }
+    ]
+  },
+  "mentions": {
+    "politicos": {
+      "ferreira": 1
+    },
+    "empresas": {
+      "topper": 4,
+      "mostaza": 3,
+      "budeguer": 2,
+      "balcanes": 2,
+      "alpargatas": 1,
+      "jaguar": 1,
+      "bachea": 1
+    },
+    "instituciones": {
+      "bloomberg": 1,
+      "corte nacional": 1,
+      "anses": 1,
+      "denosa": 1,
+      "fonavit": 1
+    },
+    "municipios": {
+      "san miguel": 11,
+      "aguilares": 5,
+      "concepción": 5,
+      "monteros": 2
+    },
+    "temas": {
+      "celular": 18,
+      "pymes": 14,
+      "salud": 10,
+      "universidad": 7,
+      "industria": 6,
+      "educación": 6,
+      "textil": 5,
+      "coparticipación": 5,
+      "autonomía": 5,
+      "legislatura": 5,
+      "importaciones": 4,
+      "mérito": 3,
+      "acople": 3,
+      "zafra": 2,
+      "pacto fiscal": 2,
+      "presupuesto": 2,
+      "importación": 1,
+      "discapacidad": 1,
+      "peronismo": 1,
+      "peronista": 1,
+      "libertad": 1
+    }
+  },
+  "quotes_destacadas": [
+    {
+      "speaker": "CHAHLA (SMT · PJ)",
+      "timestamp": 3593,
+      "text": "San Miguel de Tucumán ha pasado por todos los partidos políticos y nadie ha hecho nada",
+      "tier": 1,
+      "topic": "autocrítica política"
+    },
+    {
+      "speaker": "CHAHLA (SMT · PJ)",
+      "timestamp": 3709,
+      "text": "Un Estado eficiente e inteligente que contenga a todos los ciudadanos",
+      "tier": 1,
+      "topic": "gestión"
+    },
+    {
+      "speaker": "CHAHLA (SMT · PJ)",
+      "timestamp": 3553,
+      "text": "Que vuelva el mérito claro",
+      "tier": 1,
+      "topic": "meritocracia"
+    },
+    {
+      "speaker": "SERRA (Monteros · PJ)",
+      "timestamp": 2279,
+      "text": "Me siento orgullosamente peronista",
+      "tier": 1,
+      "topic": "identidad política"
+    },
+    {
+      "speaker": "SERRA (Monteros · PJ)",
+      "timestamp": 2413,
+      "text": "En Argentina han cerrado más de 200.000 pymes. Y esto es dato, no es relato",
+      "tier": 1,
+      "topic": "economía"
+    },
+    {
+      "speaker": "SERRA (Monteros · PJ)",
+      "timestamp": 4584,
+      "text": "Siempre ganamos por acople, siempre contra el oficialismo. Ahora somos oficiales, pero siempre por acople",
+      "tier": 1,
+      "topic": "trayectoria política"
+    },
+    {
+      "speaker": "MOLINUEVO (Concepción · UCR)",
+      "timestamp": 2235,
+      "text": "La pyme es la gran esperanza que tenemos para salir adelante como país",
+      "tier": 1,
+      "topic": "economía"
+    },
+    {
+      "speaker": "MOLINUEVO (Concepción · UCR)",
+      "timestamp": 3740,
+      "text": "Un presidente que se animó a tomar una medida antipopular que en un futuro puede traer beneficios concretos",
+      "tier": 2,
+      "topic": "Milei"
+    },
+    {
+      "speaker": "MANSILLA (Aguilares · PJ)",
+      "timestamp": 1529,
+      "text": "Es medio difícil competir con una zapatilla que entra de China de 15 mil pesos",
+      "tier": 1,
+      "topic": "Topper/importaciones"
+    },
+    {
+      "speaker": "MANSILLA (Aguilares · PJ)",
+      "timestamp": 1380,
+      "text": "El objetivo es que el niño se haga independiente: que sepa manejar su plata, cocinarse, comprarse ropa",
+      "tier": 2,
+      "topic": "Pujo Monay / discapacidad"
+    }
+  ]
+}

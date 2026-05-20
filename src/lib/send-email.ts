@@ -4,6 +4,8 @@ import { getDb } from "@/lib/mongodb";
 import { getResend, FROM } from "@/lib/resend";
 import ConfirmacionAsistencia from "@/emails/confirmacion-asistencia";
 import GraciasFeedback from "@/emails/gracias-feedback";
+import MagicLinkCande from "@/emails/magic-link-cande";
+import { MAGIC_LINK_TTL_MINUTES } from "@/lib/magic-links";
 
 const SENDS_COLLECTION = "email_sends";
 
@@ -21,8 +23,9 @@ async function sendOnce(params: {
   subject: string;
   component: ReactElement;
   meta?: Record<string, unknown>;
+  dedupe?: boolean;
 }): Promise<SendResult> {
-  const { campaign, to, subject, component, meta } = params;
+  const { campaign, to, subject, component, meta, dedupe = true } = params;
   const mail = to.trim().toLowerCase();
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
@@ -30,11 +33,13 @@ async function sendOnce(params: {
   }
 
   const db = await getDb();
-  const existing = await db
-    .collection(SENDS_COLLECTION)
-    .findOne({ campaign, mail, status: "sent" });
-  if (existing) {
-    return { ok: true, skipped: true, reason: "already sent" };
+  if (dedupe) {
+    const existing = await db
+      .collection(SENDS_COLLECTION)
+      .findOne({ campaign, mail, status: "sent" });
+    if (existing) {
+      return { ok: true, skipped: true, reason: "already sent" };
+    }
   }
 
   try {
@@ -118,5 +123,21 @@ export async function sendGraciasFeedback(params: {
     subject: "Gracias por tu feedback",
     component: GraciasFeedback({ nombre: params.nombre || "" }),
     meta: params.nombre ? { nombre: params.nombre } : undefined,
+  });
+}
+
+export async function sendMagicLinkCande(params: {
+  mail: string;
+  url: string;
+}): Promise<SendResult> {
+  return sendOnce({
+    campaign: "magic-link-cande",
+    to: params.mail,
+    subject: "Tu acceso al panel interno CEJOP",
+    component: MagicLinkCande({
+      url: params.url,
+      ttlMinutes: MAGIC_LINK_TTL_MINUTES,
+    }),
+    dedupe: false,
   });
 }
