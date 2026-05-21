@@ -5,17 +5,29 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { trackCtaClick, trackEncuestaBlocked } from "@/lib/analytics";
 
-const LS_KEY = "cejop_encuesta_completada";
+// Cada encuentro tiene su propia llave de completado para que volver a
+// inscribirse en uno nuevo no quede bloqueado por la huella del anterior.
+// El form e2 maneja su propia llave (cejop_encuesta_e2_completada).
+const LS_KEY_LEGACY = "cejop_encuesta_completada";
+const LS_KEY_ACTIVE = "cejop_encuesta_e2_completada";
 
 export function markEncuestaCompleted() {
   if (typeof window !== "undefined") {
-    localStorage.setItem(LS_KEY, "true");
+    localStorage.setItem(LS_KEY_ACTIVE, "true");
   }
 }
 
 export function isEncuestaCompleted(): boolean {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(LS_KEY) === "true";
+  return localStorage.getItem(LS_KEY_ACTIVE) === "true";
+}
+
+// Helper para limpiar la huella vieja del 1er encuentro la primera vez
+// que el visitante intenta entrar al activo.
+function clearLegacyCompletion() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(LS_KEY_LEGACY);
+  }
 }
 
 type ModalType = "cerrada" | "completada" | null;
@@ -42,14 +54,19 @@ export default function SurveyGate({
       });
   }, []);
 
-  // Intercept clicks to /encuestas_ev1
+  // Intercept clicks al form activo (e2). El selector matchea también
+  // /encuestas_ev1 por si algún link viejo todavía sobrevive en el DOM
+  // (el redirect server-side lo manda a /encuestas_ev2 de todos modos).
   const handleClick = useCallback(
     (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const anchor = target.closest("a[href='/encuestas_ev1']");
+      const anchor = target.closest(
+        "a[href='/encuestas_ev2'], a[href='/encuestas_ev1']",
+      );
       const button = target.closest("[data-encuesta]");
 
       if (!anchor && !button) return;
+      clearLegacyCompletion();
 
       // Identify which CTA was clicked
       const el = (anchor || button) as HTMLElement;
@@ -102,14 +119,8 @@ export default function SurveyGate({
               </h2>
 
               <p className="text-gray-600 text-sm leading-relaxed mb-4 max-w-sm mx-auto">
-                El primer encuentro completó su cupo. Pero esto recién
-                arranca — el CEJOP es un año entero de formación con los
-                que toman las decisiones reales en Tucumán y en el país.
-              </p>
-
-              <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-sm mx-auto">
-                Seguinos en Instagram para enterarte cuándo abre la
-                próxima convocatoria.
+                El cupo para este encuentro se completó. Seguinos en Instagram
+                para enterarte cuándo abre la próxima convocatoria.
               </p>
 
               <a
@@ -156,8 +167,8 @@ export default function SurveyGate({
               </p>
 
               <p className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">
-                Si fuiste seleccionado para el primer encuentro, te vamos a
-                contactar por email o WhatsApp antes del 18 de abril.
+                Si fuiste seleccionado, te vamos a contactar por email o
+                WhatsApp antes del encuentro.
               </p>
             </div>
           </GateModal>

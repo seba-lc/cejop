@@ -143,7 +143,7 @@ export default function EncuentroE1Page() {
           </div>
 
           <Link
-            href="/encuestas_ev1"
+            href="/encuestas_ev2"
             className="text-xs font-semibold text-cejop-blue hover:text-cejop-blue-secondary transition-colors hidden sm:block"
           >
             Tu opinión →
@@ -646,7 +646,7 @@ export default function EncuentroE1Page() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/encuestas_ev1"
+              href="/encuestas_ev2"
               className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-semibold transition-colors border border-white/15"
             >
               Dejar mi opinión del encuentro

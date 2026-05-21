@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { ENCUENTROS, colName, type EncuentroId } from "@/lib/encuentro-config";
 
-const ASISTENTES_COLLECTION = "asistentes_encuentro_1";
+const DEFAULT_ENCUENTRO: EncuentroId = "e1";
+
+function resolveEncuentroId(raw: string | null): EncuentroId {
+  if (raw && raw in ENCUENTROS) return raw as EncuentroId;
+  return DEFAULT_ENCUENTRO;
+}
 
 type AsistenteTipo = "confirmado" | "inscripto_no_confirmado" | "walk_in";
 
@@ -10,10 +16,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search")?.trim().toLowerCase() || "";
     const tipoFilter = searchParams.get("tipo") || "all";
+    const encuentroId = resolveEncuentroId(searchParams.get("encuentroId"));
 
     const db = await getDb();
     const docs = await db
-      .collection(ASISTENTES_COLLECTION)
+      .collection(colName("asistentes", encuentroId))
       .find({})
       .sort({ createdAt: -1 })
       .toArray();

@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { ENCUENTROS, type EncuentroId } from "@/lib/encuentro-config";
+
+const DEFAULT_ENCUENTRO: EncuentroId = "e1";
+
+function resolveEncuentroId(raw: string | null): EncuentroId {
+  if (raw && raw in ENCUENTROS) return raw as EncuentroId;
+  return DEFAULT_ENCUENTRO;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,13 +16,14 @@ export async function GET(req: NextRequest) {
     const localidad = searchParams.get("localidad")?.trim();
     const desde = searchParams.get("desde");
     const hasta = searchParams.get("hasta");
+    const encuentroId = resolveEncuentroId(searchParams.get("encuentroId"));
 
     const db = await getDb();
     const collection = db.collection("encuestas");
 
     // Build filter
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: Record<string, any> = {};
+    const filter: Record<string, any> = { encuentroId };
 
     if (search) {
       filter.$or = [
@@ -43,8 +52,9 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 })
       .toArray();
 
-    // Aggregate stats from ALL encuestas (not filtered)
-    const allEncuestas = await collection.find({}).toArray();
+    // Aggregate stats from ALL encuestas del encuentro (no aplica search/localidad/fecha,
+    // pero sí el filtro de encuentroId para no cruzar datos entre encuentros).
+    const allEncuestas = await collection.find({ encuentroId }).toArray();
 
     const totalRespuestas = allEncuestas.length;
 

@@ -1,7 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { ENCUENTROS, colName, type EncuentroId } from "@/lib/encuentro-config";
 
-const FEEDBACK_COLLECTION = "feedback_encuentro_1";
+const DEFAULT_ENCUENTRO: EncuentroId = "e1";
+
+function resolveEncuentroId(raw: string | null): EncuentroId {
+  if (raw && raw in ENCUENTROS) return raw as EncuentroId;
+  return DEFAULT_ENCUENTRO;
+}
 
 const TOPIC_LABELS: Record<string, string> = {
   interior: "Ministerio del Interior",
@@ -26,11 +32,14 @@ type FeedbackDoc = {
   createdAt: Date | string;
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const encuentroId = resolveEncuentroId(searchParams.get("encuentroId"));
+
     const db = await getDb();
     const docs = await db
-      .collection<FeedbackDoc>(FEEDBACK_COLLECTION)
+      .collection<FeedbackDoc>(colName("feedback", encuentroId))
       .find({})
       .sort({ createdAt: -1 })
       .toArray();

@@ -152,11 +152,11 @@ export default function Hero() {
                     className="mt-12 flex flex-col sm:flex-row gap-4"
                 >
                     <a
-                        href="/encuestas_ev1"
+                        href="/encuestas_ev2"
                         className="btn-primary-bw text-sm px-8 py-4"
-                        aria-label="Inscribite al programa CEJOP Tucumán"
+                        aria-label="Inscribite al 2do encuentro CEJOP Tucumán"
                     >
-                        Inscribite en la primera charla
+                        Inscribite al 2do encuentro
                     </a>
                     <button
                         onClick={() => {

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { normalizePhone } from "@/lib/phone";
+import { ENCUENTRO_ACTIVO, colName } from "@/lib/encuentro-config";
 
-const ASISTENTES_COLLECTION = "asistentes_encuentro_1";
-const CONFIRMACIONES_COLLECTION = "confirmaciones_encuentro_1";
-const PENDIENTES_COLLECTION = "pendientes_acreditacion_1";
+const ASISTENTES_COLLECTION = colName("asistentes");
+const CONFIRMACIONES_COLLECTION = colName("confirmaciones");
+const PENDIENTES_COLLECTION = colName("pendientes_acreditacion");
 
 type AsistenteTipo = "confirmado" | "inscripto_no_confirmado" | "walk_in";
 
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     if (mailRaw) {
       encuesta = await db
         .collection("encuestas")
-        .findOne({ "personal.mail": mailRaw });
+        .findOne({ encuentroId: ENCUENTRO_ACTIVO, "personal.mail": mailRaw });
     }
     if (!encuesta && telefonoNorm) {
       // Regex: el teléfono en encuestas puede tener cualquier prefijo;
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
       // separadores, filtramos en memoria.
       const todas = await db
         .collection("encuestas")
-        .find({}, { projection: { personal: 1 } })
+        .find({ encuentroId: ENCUENTRO_ACTIVO }, { projection: { personal: 1 } })
         .toArray();
       encuesta =
         todas.find(
@@ -134,12 +135,12 @@ export async function POST(req: NextRequest) {
     if (mail) {
       encuesta = await db
         .collection("encuestas")
-        .findOne({ "personal.mail": mail });
+        .findOne({ encuentroId: ENCUENTRO_ACTIVO, "personal.mail": mail });
     }
     if (!encuesta && telefonoNorm) {
       const todas = await db
         .collection("encuestas")
-        .find({}, { projection: { personal: 1 } })
+        .find({ encuentroId: ENCUENTRO_ACTIVO }, { projection: { personal: 1 } })
         .toArray();
       encuesta =
         todas.find(
@@ -181,7 +182,7 @@ export async function POST(req: NextRequest) {
           tipo: "confirmado",
           inscripto: true,
           confirmado: true,
-          encuentro: "e1",
+          encuentro: ENCUENTRO_ACTIVO,
           createdAt: new Date(),
         });
 
@@ -223,7 +224,7 @@ export async function POST(req: NextRequest) {
         telefonoNorm: leadTelNorm,
         inscripto: true,
         estado: "pending",
-        encuentro: "e1",
+        encuentro: ENCUENTRO_ACTIVO,
         createdAt: new Date(),
       });
 

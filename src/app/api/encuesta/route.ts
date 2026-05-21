@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import {
+  ENCUENTROS,
+  ENCUENTRO_ACTIVO,
+  type EncuentroId,
+} from "@/lib/encuentro-config";
+
+function resolveEncuentroId(raw: unknown): EncuentroId {
+  if (typeof raw === "string" && raw in ENCUENTROS) {
+    return raw as EncuentroId;
+  }
+  return ENCUENTRO_ACTIVO;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    // Check if surveys are enabled
     const db = await getDb();
     const setting = await db
       .collection("settings")
@@ -16,9 +27,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    const encuentroId = resolveEncuentroId(body.encuentroId);
 
-    // Basic validation
-    const { personal, dirigentes, prioridades } = body;
+    const { personal, dirigentes, prioridades, fueAlPrimero } = body;
     if (
       !personal?.nombre?.trim() ||
       !personal?.mail?.trim() ||
@@ -39,13 +50,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (encuentroId === "e2" && typeof fueAlPrimero !== "boolean") {
+      return NextResponse.json(
+        { error: "Falta indicar si participaste del primer encuentro" },
+        { status: 400 }
+      );
+    }
+
     const collection = db.collection("encuestas");
 
-    // Check for existing submission by email or phone
     const mail = personal.mail.trim().toLowerCase();
     const telefono = personal.telefono.trim();
 
+    // El duplicado se chequea por encuentroId: una misma persona puede
+    // inscribirse a encuentros distintos sin que el primero le bloquee el segundo.
     const existing = await collection.findOne({
+      encuentroId,
       $or: [
         { "personal.mail": mail },
         { "personal.telefono": telefono },
@@ -66,9 +86,11 @@ export async function POST(req: NextRequest) {
     const document = {
       ...body,
       personal: { ...personal, mail },
+      encuentroId,
+      ...(encuentroId === "e2" ? { fueAlPrimero: !!fueAlPrimero } : {}),
       createdAt: new Date(),
-      encuentro: body.encuentro || null,
     };
+    delete (document as Record<string, unknown>).encuentro;
 
     const result = await collection.insertOne(document);
 

@@ -1,23 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { sendConfirmacionAsistencia } from "@/lib/send-email";
+import {
+  ENCUENTROS,
+  colName,
+  type EncuentroId,
+} from "@/lib/encuentro-config";
 
-const CONFIRMACIONES_COLLECTION = "confirmaciones_encuentro_1";
+const DEFAULT_ENCUENTRO: EncuentroId = "e1";
+
+function resolveEncuentroId(raw: string | null): EncuentroId {
+  if (raw && raw in ENCUENTROS) return raw as EncuentroId;
+  return DEFAULT_ENCUENTRO;
+}
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search")?.trim().toLowerCase();
     const filter = searchParams.get("filter"); // "all" | "confirmed" | "unconfirmed"
+    const encuentroId = resolveEncuentroId(searchParams.get("encuentroId"));
 
     const db = await getDb();
     const encuestas = await db
       .collection("encuestas")
-      .find({})
+      .find({ encuentroId })
       .sort({ createdAt: -1 })
       .toArray();
     const confirmaciones = await db
-      .collection(CONFIRMACIONES_COLLECTION)
+      .collection(colName("confirmaciones", encuentroId))
       .find({})
       .toArray();
 
@@ -73,7 +84,9 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { mail, confirmado } = await req.json();
+    const body = await req.json();
+    const { mail, confirmado } = body;
+    const encuentroId = resolveEncuentroId(body.encuentroId);
     if (!mail || typeof mail !== "string") {
       return NextResponse.json({ error: "mail requerido" }, { status: 400 });
     }
@@ -81,7 +94,7 @@ export async function PATCH(req: NextRequest) {
     const mailLower = mail.trim().toLowerCase();
     const db = await getDb();
 
-    await db.collection(CONFIRMACIONES_COLLECTION).updateOne(
+    await db.collection(colName("confirmaciones", encuentroId)).updateOne(
       { mail: mailLower },
       {
         $set: {
@@ -95,14 +108,19 @@ export async function PATCH(req: NextRequest) {
     );
 
     // Disparar email de confirmación solo al pasar a confirmado=true.
-    // El helper tiene dedup propio: si ya se envió antes, no reenvía.
+    // El helper tiene dedup propio (por campaign + mail): si ya se envió antes
+    // en este encuentro, no reenvía.
     if (confirmado) {
       try {
         const encuesta = await db
           .collection("encuestas")
-          .findOne({ "personal.mail": mailLower });
+          .findOne({ encuentroId, "personal.mail": mailLower });
         const nombre = encuesta?.personal?.nombre || "";
-        await sendConfirmacionAsistencia({ mail: mailLower, nombre });
+        await sendConfirmacionAsistencia({
+          mail: mailLower,
+          nombre,
+          encuentroId,
+        });
       } catch (err) {
         console.error("Error enviando email de confirmación:", err);
         // No bloqueamos la respuesta: el toggle ya quedó persistido.

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { ENCUENTROS, colName, type EncuentroId } from "@/lib/encuentro-config";
 
-const PENDIENTES_COLLECTION = "pendientes_acreditacion_1";
-const ASISTENTES_COLLECTION = "asistentes_encuentro_1";
+const DEFAULT_ENCUENTRO: EncuentroId = "e1";
+
+function resolveEncuentroId(raw: string | null): EncuentroId {
+  if (raw && raw in ENCUENTROS) return raw as EncuentroId;
+  return DEFAULT_ENCUENTRO;
+}
 
 type EstadoPendiente = "pending" | "approved" | "rejected";
 
@@ -12,13 +17,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const estado = (searchParams.get("estado") || "pending") as EstadoPendiente | "all";
     const search = searchParams.get("search")?.trim().toLowerCase() || "";
+    const encuentroId = resolveEncuentroId(searchParams.get("encuentroId"));
+    const pendientesCol = colName("pendientes_acreditacion", encuentroId);
 
     const db = await getDb();
     const filter: Record<string, unknown> = {};
     if (estado !== "all") filter.estado = estado;
 
     const docs = await db
-      .collection(PENDIENTES_COLLECTION)
+      .collection(pendientesCol)
       .find(filter)
       .sort({ createdAt: -1 })
       .toArray();
@@ -46,7 +53,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Counts sin filtro para stats
-    const allDocs = await db.collection(PENDIENTES_COLLECTION).find({}).toArray();
+    const allDocs = await db.collection(pendientesCol).find({}).toArray();
     const counts = {
       total: allDocs.length,
       pending: allDocs.filter((d) => (d.estado || "pending") === "pending").length,
@@ -66,7 +73,9 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { id, accion } = await req.json();
+    const body = await req.json();
+    const { id, accion } = body;
+    const encuentroId = resolveEncuentroId(body.encuentroId);
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "id requerido" }, { status: 400 });
     }
@@ -78,7 +87,9 @@ export async function PATCH(req: NextRequest) {
     }
 
     const db = await getDb();
-    const pendientes = db.collection(PENDIENTES_COLLECTION);
+    const pendientes = db.collection(
+      colName("pendientes_acreditacion", encuentroId),
+    );
 
     let _id: ObjectId;
     try {
@@ -100,7 +111,7 @@ export async function PATCH(req: NextRequest) {
     // insert exitoso actualizamos el estado del pendiente.
     if (nuevoEstado === "approved") {
       const mail = (doc.mail || "").toLowerCase();
-      const asistentes = db.collection(ASISTENTES_COLLECTION);
+      const asistentes = db.collection(colName("asistentes", encuentroId));
 
       const dupCheck = mail ? await asistentes.findOne({ mail }) : null;
 
@@ -114,7 +125,7 @@ export async function PATCH(req: NextRequest) {
           tipo,
           inscripto: inscriptoFlag,
           confirmado: false,
-          encuentro: "e1",
+          encuentro: encuentroId,
           createdAt: new Date(),
           pendienteId: String(_id),
         });

@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
     try {
       const encuesta = await db
         .collection("encuestas")
-        .findOne({ "personal.mail": mail });
+        .findOne({ encuentroId: "e1", "personal.mail": mail });
       const nombre = encuesta?.personal?.nombre || "";
-      await sendGraciasFeedback({ mail, nombre });
+      await sendGraciasFeedback({ mail, nombre, encuentroId: "e1" });
     } catch (err) {
       console.error("Error enviando email de gracias por feedback:", err);
       // No rompe la respuesta al usuario.

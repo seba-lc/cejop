@@ -54,11 +54,11 @@ export default function FloatingCTA() {
           className="fixed bottom-0 left-0 right-0 z-50 p-3 md:hidden pb-[max(env(safe-area-inset-bottom),12px)]"
         >
           <a
-            href="/encuestas_ev1"
+            href="/encuestas_ev2"
             className="block w-full py-3.5 bg-cejop-blue text-white font-montserrat font-bold text-sm tracking-wide text-center shadow-lg shadow-cejop-blue/30 active:scale-[0.98] transition-transform"
-            aria-label="Inscribite en la primera charla de CEJOP Tucumán"
+            aria-label="Inscribite al 2do encuentro de CEJOP Tucumán"
           >
-            Inscribite en la primera charla
+            Inscribite al 2do encuentro
           </a>
         </motion.div>
       )}

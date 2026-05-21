@@ -6,6 +6,12 @@ import ConfirmacionAsistencia from "@/emails/confirmacion-asistencia";
 import GraciasFeedback from "@/emails/gracias-feedback";
 import MagicLinkCande from "@/emails/magic-link-cande";
 import { MAGIC_LINK_TTL_MINUTES } from "@/lib/magic-links";
+import {
+  ENCUENTROS,
+  ENCUENTRO_ACTIVO,
+  emailCampaign,
+  type EncuentroId,
+} from "@/lib/encuentro-config";
 
 const SENDS_COLLECTION = "email_sends";
 
@@ -98,31 +104,40 @@ async function sendOnce(params: {
 export async function sendConfirmacionAsistencia(params: {
   mail: string;
   nombre: string;
+  encuentroId?: EncuentroId;
 }): Promise<SendResult> {
+  const encuentroId = params.encuentroId ?? ENCUENTRO_ACTIVO;
+  const encuentro = ENCUENTROS[encuentroId];
   const firstName = (params.nombre || "").split(" ")[0] || "";
+  const evento = `${encuentro.ordinal} CEJOP`;
   const subject = firstName
-    ? `${firstName}, quedaste confirmado/a en el primer CEJOP`
-    : "Quedaste confirmado/a en el primer CEJOP";
+    ? `${firstName}, quedaste confirmado/a en el ${evento}`
+    : `Quedaste confirmado/a en el ${evento}`;
 
   return sendOnce({
-    campaign: "confirmacion-encuentro-1",
+    campaign: emailCampaign("confirmacion", encuentroId),
     to: params.mail,
     subject,
     component: ConfirmacionAsistencia({ nombre: params.nombre }),
-    meta: { nombre: params.nombre },
+    meta: { nombre: params.nombre, encuentroId },
   });
 }
 
 export async function sendGraciasFeedback(params: {
   mail: string;
   nombre?: string;
+  encuentroId?: EncuentroId;
 }): Promise<SendResult> {
+  const encuentroId = params.encuentroId ?? ENCUENTRO_ACTIVO;
   return sendOnce({
-    campaign: "gracias-feedback-encuentro-1",
+    campaign: emailCampaign("gracias-feedback", encuentroId),
     to: params.mail,
     subject: "Gracias por tu feedback",
     component: GraciasFeedback({ nombre: params.nombre || "" }),
-    meta: params.nombre ? { nombre: params.nombre } : undefined,
+    meta: {
+      ...(params.nombre ? { nombre: params.nombre } : {}),
+      encuentroId,
+    },
   });
 }
 
