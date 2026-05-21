@@ -3,6 +3,7 @@ import path from "path";
 import { getDb } from "@/lib/mongodb";
 import type {
   AudioMetrics,
+  AudioPeaks,
   DashboardData,
   EncuestasStats,
   FeedbackStats,
@@ -324,14 +325,35 @@ async function loadFeedbackStats(): Promise<FeedbackStats> {
   }
 }
 
+async function loadAudioPeaks(): Promise<AudioPeaks | null> {
+  try {
+    const raw = await readJson<{
+      channels?: number;
+      length: number;
+      duration_s: number;
+      peaks: number[];
+    }>("peaks.json");
+    return {
+      channels: raw.channels ?? 1,
+      length: raw.length,
+      duration_s: raw.duration_s,
+      peaks: raw.peaks,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function loadDashboardData(): Promise<DashboardData> {
-  const [timeline, audio, text, encuestas, feedback] = await Promise.all([
-    readJson<Timeline>("timeline.json"),
-    readJson<AudioMetrics>("audio-metrics.json"),
-    readJson<TextMetrics>("text-metrics.json"),
-    loadEncuestasStats(),
-    loadFeedbackStats(),
-  ]);
+  const [timeline, audio, text, encuestas, feedback, audioPeaks] =
+    await Promise.all([
+      readJson<Timeline>("timeline.json"),
+      readJson<AudioMetrics>("audio-metrics.json"),
+      readJson<TextMetrics>("text-metrics.json"),
+      loadEncuestasStats(),
+      loadFeedbackStats(),
+      loadAudioPeaks(),
+    ]);
 
   const audioUrl = process.env.NEXT_PUBLIC_AUDIO_E1_URL || "/audio/e1.mp3";
   const mongoStatus: "live" | "mock" =
@@ -344,6 +366,7 @@ export async function loadDashboardData(): Promise<DashboardData> {
     encuestas,
     feedback,
     audioUrl,
+    audioPeaks,
     source: { mongo: mongoStatus, analysis: "live" },
   };
 }

@@ -61,6 +61,7 @@ export default async function EncuentroUnoPage() {
           audioUrl={data.audioUrl}
           timeline={data.timeline}
           audio={data.audio}
+          audioPeaks={data.audioPeaks}
         />
         <IntendentesGrid data={data} />
         <ChartsEncuestas

@@ -86,6 +86,13 @@ export type FeedbackStats = {
   quotesTeLlevas: { mail: string; text: string }[];
 };
 
+export type AudioPeaks = {
+  channels: number;
+  length: number;
+  duration_s: number;
+  peaks: number[];
+};
+
 export type DashboardData = {
   timeline: Timeline;
   audio: AudioMetrics;
@@ -93,6 +100,7 @@ export type DashboardData = {
   encuestas: EncuestasStats;
   feedback: FeedbackStats;
   audioUrl: string;
+  audioPeaks: AudioPeaks | null;
   source: { mongo: "live" | "mock"; analysis: "live" | "mock" };
 };
 

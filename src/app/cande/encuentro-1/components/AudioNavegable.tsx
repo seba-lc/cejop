@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
-import type { Timeline, AudioMetrics } from "@/types/encuentro1";
+import type { Timeline, AudioMetrics, AudioPeaks } from "@/types/encuentro1";
 
 type Props = {
   audioUrl: string;
   timeline: Timeline;
   audio: AudioMetrics;
+  audioPeaks: AudioPeaks | null;
 };
 
 function formatTime(s: number): string {
@@ -21,13 +22,19 @@ function formatTime(s: number): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-export default function AudioNavegable({ audioUrl, timeline, audio }: Props) {
+export default function AudioNavegable({
+  audioUrl,
+  timeline,
+  audio,
+  audioPeaks,
+}: Props) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WaveSurfer | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [activeSpeakers, setActiveSpeakers] = useState<Set<string>>(
     new Set(Object.keys(timeline.speaker_colors))
   );
@@ -35,9 +42,16 @@ export default function AudioNavegable({ audioUrl, timeline, audio }: Props) {
   // Init wavesurfer
   useEffect(() => {
     if (!waveformRef.current) return;
+    const mediaEl = new Audio();
+    mediaEl.preload = "metadata";
+    mediaEl.crossOrigin = "anonymous";
+    mediaEl.src = audioUrl;
+
     const ws = WaveSurfer.create({
       container: waveformRef.current,
-      url: audioUrl,
+      media: mediaEl,
+      peaks: audioPeaks ? [audioPeaks.peaks] : undefined,
+      duration: audioPeaks?.duration_s,
       waveColor: "#B7BFE7",
       progressColor: "#2C46BF",
       cursorColor: "#1A1A2E",
@@ -45,9 +59,13 @@ export default function AudioNavegable({ audioUrl, timeline, audio }: Props) {
       barWidth: 2,
       barGap: 1,
       barRadius: 1,
-      normalize: true,
+      normalize: !audioPeaks,
     });
     wsRef.current = ws;
+
+    // Si pasamos peaks precomputados, la waveform queda lista al instante
+    // y el audio se carga progresivamente vía <audio> HTML5 (streaming).
+    if (audioPeaks) setIsReady(true);
 
     ws.on("ready", () => setIsReady(true));
     ws.on("play", () => setIsPlaying(true));
@@ -55,11 +73,21 @@ export default function AudioNavegable({ audioUrl, timeline, audio }: Props) {
     ws.on("timeupdate", (t) => setCurrentTime(t));
     ws.on("finish", () => setIsPlaying(false));
 
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
+    const onCanPlay = () => setIsBuffering(false);
+    mediaEl.addEventListener("waiting", onWaiting);
+    mediaEl.addEventListener("playing", onPlaying);
+    mediaEl.addEventListener("canplay", onCanPlay);
+
     return () => {
+      mediaEl.removeEventListener("waiting", onWaiting);
+      mediaEl.removeEventListener("playing", onPlaying);
+      mediaEl.removeEventListener("canplay", onCanPlay);
       ws.destroy();
       wsRef.current = null;
     };
-  }, [audioUrl]);
+  }, [audioUrl, audioPeaks]);
 
   // Listen for external seek events (from cards/insights)
   useEffect(() => {
@@ -150,7 +178,11 @@ export default function AudioNavegable({ audioUrl, timeline, audio }: Props) {
           </button>
           <div className="flex-1 min-w-0">
             <div className="text-xs font-encode uppercase tracking-wide text-cejop-dark/60">
-              {isReady ? "Reproductor" : "Cargando audio..."}
+              {!isReady
+                ? "Cargando audio..."
+                : isBuffering
+                ? "Buffereando..."
+                : "Reproductor"}
             </div>
             <div className="text-sm font-bold text-cejop-dark tabular-nums">
               {formatTime(currentTime)}{" "}
