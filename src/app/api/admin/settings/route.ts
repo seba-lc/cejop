@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import {
+  getEncuentroActivo,
+  setEncuentroActivo,
+  ENCUENTROS,
+  type EncuentroId,
+} from "@/lib/encuentro-config";
 
-const SETTINGS_KEY = "encuestas_habilitadas";
+const KEY_ENCUESTAS = "encuestas_habilitadas";
 
 export async function GET() {
   try {
     const db = await getDb();
-    const setting = await db
+    const habilitadasDoc = await db
       .collection("settings")
-      .findOne({ key: SETTINGS_KEY });
+      .findOne({ key: KEY_ENCUESTAS });
+    const encuentroActivo = await getEncuentroActivo();
 
     return NextResponse.json({
-      encuestasHabilitadas: setting?.value ?? true,
+      encuestasHabilitadas: habilitadasDoc?.value ?? true,
+      encuentroActivo,
     });
   } catch (error) {
     console.error("Error reading settings:", error);
@@ -24,23 +32,38 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { encuestasHabilitadas } = await req.json();
+    const body = await req.json();
+    const updates: Record<string, unknown> = {};
 
-    if (typeof encuestasHabilitadas !== "boolean") {
+    if (typeof body.encuestasHabilitadas === "boolean") {
+      const db = await getDb();
+      await db.collection("settings").updateOne(
+        { key: KEY_ENCUESTAS },
+        { $set: { value: body.encuestasHabilitadas, updatedAt: new Date() } },
+        { upsert: true }
+      );
+      updates.encuestasHabilitadas = body.encuestasHabilitadas;
+    }
+
+    if (typeof body.encuentroActivo === "string") {
+      if (!(body.encuentroActivo in ENCUENTROS)) {
+        return NextResponse.json(
+          { error: `encuentroActivo inválido: ${body.encuentroActivo}` },
+          { status: 400 }
+        );
+      }
+      await setEncuentroActivo(body.encuentroActivo as EncuentroId);
+      updates.encuentroActivo = body.encuentroActivo;
+    }
+
+    if (Object.keys(updates).length === 0) {
       return NextResponse.json(
-        { error: "encuestasHabilitadas debe ser boolean" },
+        { error: "No hay campos válidos para actualizar" },
         { status: 400 }
       );
     }
 
-    const db = await getDb();
-    await db.collection("settings").updateOne(
-      { key: SETTINGS_KEY },
-      { $set: { value: encuestasHabilitadas, updatedAt: new Date() } },
-      { upsert: true }
-    );
-
-    return NextResponse.json({ encuestasHabilitadas });
+    return NextResponse.json(updates);
   } catch (error) {
     console.error("Error updating settings:", error);
     return NextResponse.json(

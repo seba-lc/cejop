@@ -168,6 +168,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [encuestasHabilitadas, setEncuestasHabilitadas] = useState(true);
   const [toggling, setToggling] = useState(false);
+  const [e2Activo, setE2Activo] = useState(false);
+  const [togglingE2, setTogglingE2] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("panel");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -200,6 +202,7 @@ export default function AdminDashboard() {
     if (res.ok) {
       const data = await res.json();
       setEncuestasHabilitadas(data.encuestasHabilitadas);
+      setE2Activo(data.encuentroActivo === "e2");
     }
   }, []);
 
@@ -248,6 +251,18 @@ export default function AdminDashboard() {
     });
     if (res.ok) setEncuestasHabilitadas(!encuestasHabilitadas);
     setToggling(false);
+  }
+
+  async function toggleE2() {
+    setTogglingE2(true);
+    const next = !e2Activo;
+    const res = await fetch("/api/admin/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ encuentroActivo: next ? "e2" : "e1" }),
+    });
+    if (res.ok) setE2Activo(next);
+    setTogglingE2(false);
   }
 
   async function handleLogout() {
@@ -367,6 +382,9 @@ export default function AdminDashboard() {
             encuestasHabilitadas={encuestasHabilitadas}
             toggling={toggling}
             toggleEncuestas={toggleEncuestas}
+            e2Activo={e2Activo}
+            togglingE2={togglingE2}
+            toggleE2={toggleE2}
             timeline={timeline}
             encuestas={encuestas}
           />
@@ -447,6 +465,9 @@ function TabPanel({
   encuestasHabilitadas,
   toggling,
   toggleEncuestas,
+  e2Activo,
+  togglingE2,
+  toggleE2,
   timeline,
   encuestas,
 }: {
@@ -454,6 +475,9 @@ function TabPanel({
   encuestasHabilitadas: boolean;
   toggling: boolean;
   toggleEncuestas: () => void;
+  e2Activo: boolean;
+  togglingE2: boolean;
+  toggleE2: () => void;
   timeline: { date: string; count: number }[];
   encuestas: Encuesta[];
 }) {
@@ -469,32 +493,71 @@ function TabPanel({
     <div className="space-y-6">
       {/* Toggle + stats row */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Toggle */}
-        <Card className="lg:col-span-1">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-gray-400 font-medium">Encuestas</span>
-            <button
-              onClick={toggleEncuestas}
-              disabled={toggling}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                encuestasHabilitadas ? "bg-green-500" : "bg-gray-600"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  encuestasHabilitadas ? "translate-x-6" : "translate-x-0"
+        {/* Toggles */}
+        <Card className="lg:col-span-1 space-y-5">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-400 font-medium">Encuestas</span>
+              <button
+                onClick={toggleEncuestas}
+                disabled={toggling}
+                aria-label={
+                  encuestasHabilitadas
+                    ? "Pausar encuestas"
+                    : "Activar encuestas"
+                }
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  encuestasHabilitadas ? "bg-green-500" : "bg-gray-600"
                 }`}
-              />
-            </button>
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    encuestasHabilitadas ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+            <p className="text-2xl font-bold text-white font-montserrat">
+              {encuestasHabilitadas ? "Activas" : "Pausadas"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {encuestasHabilitadas
+                ? "Aceptando respuestas"
+                : "No se aceptan respuestas"}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-white font-montserrat">
-            {encuestasHabilitadas ? "Activas" : "Pausadas"}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            {encuestasHabilitadas
-              ? "Aceptando respuestas"
-              : "No se aceptan respuestas"}
-          </p>
+
+          <div className="border-t border-white/10 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-400 font-medium">
+                2do encuentro
+              </span>
+              <button
+                onClick={toggleE2}
+                disabled={togglingE2}
+                aria-label={
+                  e2Activo ? "Desactivar 2do encuentro" : "Activar 2do encuentro"
+                }
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  e2Activo ? "bg-green-500" : "bg-gray-600"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    e2Activo ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+            <p className="text-2xl font-bold text-white font-montserrat">
+              {e2Activo ? "Activo" : "Cerrado"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {e2Activo
+                ? "/encuestas_ev2 abierto al público"
+                : "/encuestas_ev2 muestra cerrado"}
+            </p>
+          </div>
         </Card>
 
         {/* Total */}

@@ -154,7 +154,7 @@ export default function EncuestaE2Page() {
     fetch("/api/encuesta/status")
       .then((r) => r.json())
       .then((data) => {
-        if (!data.habilitada) {
+        if (!data.habilitada || data.encuentroActivo !== "e2") {
           setEncuestaCerrada(true);
           trackEncuestaBlocked();
         }

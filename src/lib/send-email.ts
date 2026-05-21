@@ -8,7 +8,7 @@ import MagicLinkCande from "@/emails/magic-link-cande";
 import { MAGIC_LINK_TTL_MINUTES } from "@/lib/magic-links";
 import {
   ENCUENTROS,
-  ENCUENTRO_ACTIVO,
+  getEncuentroActivo,
   emailCampaign,
   type EncuentroId,
 } from "@/lib/encuentro-config";
@@ -106,7 +106,7 @@ export async function sendConfirmacionAsistencia(params: {
   nombre: string;
   encuentroId?: EncuentroId;
 }): Promise<SendResult> {
-  const encuentroId = params.encuentroId ?? ENCUENTRO_ACTIVO;
+  const encuentroId = params.encuentroId ?? (await getEncuentroActivo());
   const encuentro = ENCUENTROS[encuentroId];
   const firstName = (params.nombre || "").split(" ")[0] || "";
   const evento = `${encuentro.ordinal} CEJOP`;
@@ -128,7 +128,7 @@ export async function sendGraciasFeedback(params: {
   nombre?: string;
   encuentroId?: EncuentroId;
 }): Promise<SendResult> {
-  const encuentroId = params.encuentroId ?? ENCUENTRO_ACTIVO;
+  const encuentroId = params.encuentroId ?? (await getEncuentroActivo());
   return sendOnce({
     campaign: emailCampaign("gracias-feedback", encuentroId),
     to: params.mail,

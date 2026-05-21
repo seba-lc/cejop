@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { normalizePhone } from "@/lib/phone";
-import { ENCUENTRO_ACTIVO, colName } from "@/lib/encuentro-config";
-
-const ASISTENTES_COLLECTION = colName("asistentes");
-const CONFIRMACIONES_COLLECTION = colName("confirmaciones");
-const PENDIENTES_COLLECTION = colName("pendientes_acreditacion");
+import { getEncuentroActivo, colName } from "@/lib/encuentro-config";
 
 type AsistenteTipo = "confirmado" | "inscripto_no_confirmado" | "walk_in";
 
@@ -37,6 +33,9 @@ export async function GET(req: NextRequest) {
     }
 
     const db = await getDb();
+    const encuentroId = await getEncuentroActivo();
+    const asistentesCol = colName("asistentes", encuentroId);
+    const confirmacionesCol = colName("confirmaciones", encuentroId);
 
     // --- Buscar encuesta por mail o por los últimos 10 dígitos de teléfono
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +43,7 @@ export async function GET(req: NextRequest) {
     if (mailRaw) {
       encuesta = await db
         .collection("encuestas")
-        .findOne({ encuentroId: ENCUENTRO_ACTIVO, "personal.mail": mailRaw });
+        .findOne({ encuentroId, "personal.mail": mailRaw });
     }
     if (!encuesta && telefonoNorm) {
       // Regex: el teléfono en encuestas puede tener cualquier prefijo;
@@ -53,7 +52,7 @@ export async function GET(req: NextRequest) {
       // separadores, filtramos en memoria.
       const todas = await db
         .collection("encuestas")
-        .find({ encuentroId: ENCUENTRO_ACTIVO }, { projection: { personal: 1 } })
+        .find({ encuentroId }, { projection: { personal: 1 } })
         .toArray();
       encuesta =
         todas.find(
@@ -63,11 +62,11 @@ export async function GET(req: NextRequest) {
 
     const mail = (encuesta?.personal?.mail || mailRaw || "").toLowerCase();
     const confirmacion = mail
-      ? await db.collection(CONFIRMACIONES_COLLECTION).findOne({ mail })
+      ? await db.collection(confirmacionesCol).findOne({ mail })
       : null;
 
     const existingAsistencia = mail
-      ? await db.collection(ASISTENTES_COLLECTION).findOne({ mail })
+      ? await db.collection(asistentesCol).findOne({ mail })
       : null;
 
     const inscripto = !!encuesta;
@@ -128,6 +127,10 @@ export async function POST(req: NextRequest) {
     }
 
     const db = await getDb();
+    const encuentroId = await getEncuentroActivo();
+    const asistentesCol = colName("asistentes", encuentroId);
+    const confirmacionesCol = colName("confirmaciones", encuentroId);
+    const pendientesCol = colName("pendientes_acreditacion", encuentroId);
 
     // ¿Está en encuestas? (vía mail o teléfono)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,12 +138,12 @@ export async function POST(req: NextRequest) {
     if (mail) {
       encuesta = await db
         .collection("encuestas")
-        .findOne({ encuentroId: ENCUENTRO_ACTIVO, "personal.mail": mail });
+        .findOne({ encuentroId, "personal.mail": mail });
     }
     if (!encuesta && telefonoNorm) {
       const todas = await db
         .collection("encuestas")
-        .find({ encuentroId: ENCUENTRO_ACTIVO }, { projection: { personal: 1 } })
+        .find({ encuentroId }, { projection: { personal: 1 } })
         .toArray();
       encuesta =
         todas.find(
@@ -152,7 +155,7 @@ export async function POST(req: NextRequest) {
     if (encuesta) {
       const leadMail = String(encuesta.personal?.mail || mail).toLowerCase();
       const confirmacion = await db
-        .collection(CONFIRMACIONES_COLLECTION)
+        .collection(confirmacionesCol)
         .findOne({ mail: leadMail });
       const confirmado = !!confirmacion?.confirmado;
       const leadNombre = encuesta.personal?.nombre || nombre || "";
@@ -160,9 +163,9 @@ export async function POST(req: NextRequest) {
       const leadEdad = encuesta.personal?.edad || edadNum || null;
       const leadTelNorm = normalizePhone(leadTel);
 
-      // A.1 — Confirmado: acredita directo en asistentes_encuentro_1
+      // A.1 — Confirmado: acredita directo en asistentes del encuentro activo
       if (confirmado) {
-        const coll = db.collection(ASISTENTES_COLLECTION);
+        const coll = db.collection(asistentesCol);
         const existing = await coll.findOne({ mail: leadMail });
 
         if (existing) {
@@ -182,7 +185,7 @@ export async function POST(req: NextRequest) {
           tipo: "confirmado",
           inscripto: true,
           confirmado: true,
-          encuentro: ENCUENTRO_ACTIVO,
+          encuentro: encuentroId,
           createdAt: new Date(),
         });
 
@@ -197,7 +200,7 @@ export async function POST(req: NextRequest) {
 
       // A.2 — Inscripto sin confirmar: queda en pendientes (con datos ya
       //       prellenados de la encuesta) para que admin decida
-      const pendientes = db.collection(PENDIENTES_COLLECTION);
+      const pendientes = db.collection(pendientesCol);
       const existingPending = await pendientes.findOne({
         $or: [
           { mail: leadMail },
@@ -224,7 +227,7 @@ export async function POST(req: NextRequest) {
         telefonoNorm: leadTelNorm,
         inscripto: true,
         estado: "pending",
-        encuentro: ENCUENTRO_ACTIVO,
+        encuentro: encuentroId,
         createdAt: new Date(),
       });
 
@@ -251,7 +254,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const pendientes = db.collection(PENDIENTES_COLLECTION);
+    const pendientes = db.collection(pendientesCol);
     const existingPending = await pendientes.findOne({
       $or: [
         ...(mail ? [{ mail }] : []),
@@ -277,7 +280,7 @@ export async function POST(req: NextRequest) {
       telefonoNorm,
       inscripto: false,
       estado: "pending",
-      encuentro: "e1",
+      encuentro: encuentroId,
       createdAt: new Date(),
     });
 

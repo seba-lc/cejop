@@ -2,15 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import {
   ENCUENTROS,
-  ENCUENTRO_ACTIVO,
+  getEncuentroActivo,
   type EncuentroId,
 } from "@/lib/encuentro-config";
 
-function resolveEncuentroId(raw: unknown): EncuentroId {
-  if (typeof raw === "string" && raw in ENCUENTROS) {
-    return raw as EncuentroId;
-  }
-  return ENCUENTRO_ACTIVO;
+function isValidId(value: unknown): value is EncuentroId {
+  return typeof value === "string" && value in ENCUENTROS;
 }
 
 export async function POST(req: NextRequest) {
@@ -27,7 +24,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const encuentroId = resolveEncuentroId(body.encuentroId);
+    const requestedId: EncuentroId = isValidId(body.encuentroId)
+      ? body.encuentroId
+      : await getEncuentroActivo();
+    const encuentroActivo = await getEncuentroActivo();
+
+    // Si llega un POST a un encuentro que no es el vigente, rechazamos.
+    // Cubre el caso de que alguien tenga abierta la página de un encuentro
+    // anterior mientras admin cambió el activo desde el dashboard.
+    if (requestedId !== encuentroActivo) {
+      return NextResponse.json(
+        {
+          error: `Las inscripciones al ${ENCUENTROS[requestedId].ordinal} encuentro están cerradas.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    const encuentroId = requestedId;
 
     const { personal, dirigentes, prioridades, fueAlPrimero } = body;
     if (
