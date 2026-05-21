@@ -170,6 +170,7 @@ export default function AdminDashboard() {
   const [toggling, setToggling] = useState(false);
   const [e2Activo, setE2Activo] = useState(false);
   const [togglingE2, setTogglingE2] = useState(false);
+  const [selectedEncuentro, setSelectedEncuentro] = useState<"e1" | "e2">("e1");
   const [activeTab, setActiveTab] = useState<TabId>("panel");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -181,6 +182,7 @@ export default function AdminDashboard() {
 
   const fetchEncuestas = useCallback(async () => {
     const params = new URLSearchParams();
+    params.set("encuentroId", selectedEncuentro);
     if (search) params.set("search", search);
     if (localidad) params.set("localidad", localidad);
     if (desde) params.set("desde", desde);
@@ -195,7 +197,7 @@ export default function AdminDashboard() {
     setEncuestas(data.encuestas || []);
     setStats(data.stats || null);
     setFilteredCount(data.filteredCount || 0);
-  }, [search, localidad, desde, hasta, router]);
+  }, [search, localidad, desde, hasta, router, selectedEncuentro]);
 
   const fetchSettings = useCallback(async () => {
     const res = await fetch("/api/admin/settings");
@@ -350,6 +352,36 @@ export default function AdminDashboard() {
         </div>
       </header>
 
+      {/* Switcher de encuentro */}
+      <div className="bg-[#0f1129] border-b border-white/5 px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <span className="text-xs text-gray-500 font-encode uppercase tracking-widest">
+            Datos del encuentro
+          </span>
+          <div className="inline-flex bg-[#141636] border border-white/10 rounded-md overflow-hidden">
+            {(["e1", "e2"] as const).map((id) => {
+              const active = selectedEncuentro === id;
+              const label = id === "e1" ? "1er encuentro" : "2do encuentro";
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedEncuentro(id)}
+                  aria-pressed={active}
+                  className={`px-4 py-1.5 text-xs font-montserrat font-bold tracking-wide transition-colors ${
+                    active
+                      ? "bg-cejop-blue text-white"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <nav className="bg-[#141636] border-b border-white/10 px-6 overflow-x-auto">
         <div className="max-w-7xl mx-auto flex gap-1">
@@ -389,10 +421,18 @@ export default function AdminDashboard() {
             encuestas={encuestas}
           />
         )}
-        {activeTab === "confirmados" && <TabConfirmados />}
-        {activeTab === "pendientes" && <TabPendientes />}
-        {activeTab === "acreditados" && <TabAsistentes />}
-        {activeTab === "feedback" && <TabFeedback />}
+        {activeTab === "confirmados" && (
+          <TabConfirmados encuentroId={selectedEncuentro} />
+        )}
+        {activeTab === "pendientes" && (
+          <TabPendientes encuentroId={selectedEncuentro} />
+        )}
+        {activeTab === "acreditados" && (
+          <TabAsistentes encuentroId={selectedEncuentro} />
+        )}
+        {activeTab === "feedback" && (
+          <TabFeedback encuentroId={selectedEncuentro} />
+        )}
         {activeTab === "emails" && <TabEmailsLog />}
         {activeTab === "prioridades" && (
           <TabPrioridades
@@ -1374,7 +1414,7 @@ type ConfirmacionItem = {
 
 type ConfirmacionFilter = "all" | "confirmed" | "unconfirmed";
 
-function TabConfirmados() {
+function TabConfirmados({ encuentroId }: { encuentroId: "e1" | "e2" }) {
   const [items, setItems] = useState<ConfirmacionItem[]>([]);
   const [totalInscriptos, setTotalInscriptos] = useState(0);
   const [totalConfirmados, setTotalConfirmados] = useState(0);
@@ -1385,6 +1425,7 @@ function TabConfirmados() {
 
   const fetchData = useCallback(async () => {
     const params = new URLSearchParams();
+    params.set("encuentroId", encuentroId);
     if (search) params.set("search", search);
     if (filter !== "all") params.set("filter", filter);
 
@@ -1394,9 +1435,10 @@ function TabConfirmados() {
     setItems(data.items || []);
     setTotalInscriptos(data.stats?.totalInscriptos || 0);
     setTotalConfirmados(data.stats?.totalConfirmados || 0);
-  }, [search, filter]);
+  }, [search, filter, encuentroId]);
 
   useEffect(() => {
+    setLoading(true);
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
@@ -1413,7 +1455,7 @@ function TabConfirmados() {
     const res = await fetch("/api/admin/confirmaciones", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mail, confirmado: next }),
+      body: JSON.stringify({ mail, confirmado: next, encuentroId }),
     });
 
     if (!res.ok) {
@@ -2050,7 +2092,7 @@ type AsistenteCounts = {
   walk_in: number;
 };
 
-function TabAsistentes() {
+function TabAsistentes({ encuentroId }: { encuentroId: "e1" | "e2" }) {
   const [items, setItems] = useState<AsistenteItem[]>([]);
   const [counts, setCounts] = useState<AsistenteCounts | null>(null);
   const [search, setSearch] = useState("");
@@ -2060,6 +2102,7 @@ function TabAsistentes() {
 
   const fetchData = useCallback(async () => {
     const params = new URLSearchParams();
+    params.set("encuentroId", encuentroId);
     if (search) params.set("search", search);
     if (tipo !== "all") params.set("tipo", tipo);
 
@@ -2068,9 +2111,10 @@ function TabAsistentes() {
     const data = await res.json();
     setItems(data.items || []);
     setCounts(data.counts || null);
-  }, [search, tipo]);
+  }, [search, tipo, encuentroId]);
 
   useEffect(() => {
+    setLoading(true);
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
@@ -2378,21 +2422,23 @@ type FeedbackStats = {
   origenes: { label: string; count: number }[];
 };
 
-function TabFeedback() {
+function TabFeedback({ encuentroId }: { encuentroId: "e1" | "e2" }) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/feedback")
+    setLoading(true);
+    const params = new URLSearchParams({ encuentroId });
+    fetch(`/api/admin/feedback?${params}`)
       .then((r) => r.json())
       .then((data) => {
         setItems(data.items || []);
         setStats(data.stats || null);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [encuentroId]);
 
   if (loading) {
     return (
@@ -2920,7 +2966,7 @@ type PendientesCounts = {
 
 type PendienteFilter = "pending" | "approved" | "rejected" | "all";
 
-function TabPendientes() {
+function TabPendientes({ encuentroId }: { encuentroId: "e1" | "e2" }) {
   const [items, setItems] = useState<PendienteItem[]>([]);
   const [counts, setCounts] = useState<PendientesCounts | null>(null);
   const [search, setSearch] = useState("");
@@ -2931,6 +2977,7 @@ function TabPendientes() {
 
   const fetchData = useCallback(async () => {
     const params = new URLSearchParams();
+    params.set("encuentroId", encuentroId);
     if (search) params.set("search", search);
     params.set("estado", estado);
 
@@ -2939,9 +2986,10 @@ function TabPendientes() {
     const data = await res.json();
     setItems(data.items || []);
     setCounts(data.counts || null);
-  }, [search, estado]);
+  }, [search, estado, encuentroId]);
 
   useEffect(() => {
+    setLoading(true);
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
@@ -2967,7 +3015,7 @@ function TabPendientes() {
       const res = await fetch("/api/admin/pendientes", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, accion }),
+        body: JSON.stringify({ id, accion, encuentroId }),
       });
       if (!res.ok) {
         // Revert on failure
