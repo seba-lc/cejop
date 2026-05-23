@@ -65,6 +65,19 @@ const PRIORITY_LABELS: Record<string, string> = {
   justicia: "Justicia",
 };
 
+const EJES_ENCUENTRO_LABELS: Record<string, string> = {
+  "reforma-electoral": "Reforma electoral",
+  "juventud-poder": "Juventud y participación",
+  modernizacion: "Modernización institucional",
+  transparencia: "Transparencia legislativa",
+  asesores: "Asesores legislativos",
+  cercania: "Cercanía con la ciudadanía",
+  consensos: "Consensos en polarización",
+  redes: "Política y redes sociales",
+  transformacion: "Legislatura y transformación",
+  "futuro-tuc": "Futuro de Tucumán",
+};
+
 const CHART_BLUE = "#2C46BF";
 const CHART_BLUE_LIGHT = "#4A6AE5";
 const PIE_COLORS = [
@@ -99,6 +112,7 @@ type Encuesta = any;
 type Stats = {
   totalRespuestas: number;
   topPrioridades: { id: string; count: number }[];
+  topEjesEncuentro?: { id: string; count: number }[];
   localidades: { name: string; count: number }[];
 };
 
@@ -275,18 +289,28 @@ export default function AdminDashboard() {
   function exportCSV() {
     const headers = [
       "Nombre", "Email", "Teléfono", "Edad", "Localidad",
+      "Afiliado a partido", "Partido",
+      "Participa en ONG", "ONG",
+      "Ocupación",
       "Prioridad 1", "Prioridad 2", "Prioridad 3",
       "Dirigente TUC (admira)", "Por qué",
       "Dirigente ARG (admira)", "Por qué",
       "Dirigente TUC (cuestiona)", "Por qué",
       "Dirigente ARG (cuestiona)", "Por qué",
+      "Eje encuentro 1", "Eje encuentro 2", "Eje encuentro 3",
       "Otra preocupación", "Fecha",
     ];
+
+    const fmtBool = (v: boolean | undefined) =>
+      v === true ? "Sí" : v === false ? "No" : "";
 
     const rows = encuestas.map((e: Encuesta) => [
       e.personal?.nombre || "", e.personal?.mail || "",
       e.personal?.telefono || "", e.personal?.edad || "",
       e.personal?.localidad || "",
+      fmtBool(e.perfil?.partido?.afiliado), e.perfil?.partido?.cual || "",
+      fmtBool(e.perfil?.ong?.participa), e.perfil?.ong?.cual || "",
+      e.perfil?.ocupacion || "",
       PRIORITY_LABELS[e.prioridades?.[0]] || e.prioridades?.[0] || "",
       PRIORITY_LABELS[e.prioridades?.[1]] || e.prioridades?.[1] || "",
       PRIORITY_LABELS[e.prioridades?.[2]] || e.prioridades?.[2] || "",
@@ -294,6 +318,9 @@ export default function AdminDashboard() {
       e.dirigentes?.argGustar?.nombre || "", e.dirigentes?.argGustar?.porque || "",
       e.dirigentes?.tucDisgustar?.nombre || "", e.dirigentes?.tucDisgustar?.porque || "",
       e.dirigentes?.argDisgustar?.nombre || "", e.dirigentes?.argDisgustar?.porque || "",
+      EJES_ENCUENTRO_LABELS[e.ejesEncuentro?.[0]] || e.ejesEncuentro?.[0] || "",
+      EJES_ENCUENTRO_LABELS[e.ejesEncuentro?.[1]] || e.ejesEncuentro?.[1] || "",
+      EJES_ENCUENTRO_LABELS[e.ejesEncuentro?.[2]] || e.ejesEncuentro?.[2] || "",
       e.otraPreocupacion || "",
       e.createdAt ? new Date(e.createdAt).toLocaleDateString("es-AR") : "",
     ]);
@@ -768,6 +795,48 @@ function TabPanel({
           </div>
         </Card>
       </div>
+
+      {stats?.topEjesEncuentro && stats.topEjesEncuentro.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-montserrat font-semibold text-white">
+              Top ejes del 2do encuentro
+            </h3>
+            <span className="font-encode text-[10px] tracking-[0.25em] uppercase text-cejop-blue-light">
+              Interés pre-encuentro
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+            {stats.topEjesEncuentro.map((eje, i) => (
+              <div key={eje.id} className="flex items-center gap-3">
+                <span className="text-xs font-bold text-cejop-blue w-5">
+                  {i + 1}
+                </span>
+                <div className="flex-1">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm text-gray-300">
+                      {EJES_ENCUENTRO_LABELS[eje.id] || eje.id}
+                    </span>
+                    <span className="text-sm font-semibold text-white">
+                      {eje.count}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-cejop-blue rounded-full transition-all"
+                      style={{
+                        width: `${
+                          (eje.count / (stats?.totalRespuestas || 1)) * 100
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -1310,6 +1379,37 @@ function EncuestaDetail({ enc }: { enc: Encuesta }) {
         </dl>
       </div>
 
+      {enc.perfil && (
+        <div>
+          <h4 className="font-montserrat font-semibold text-white mb-3">
+            Perfil
+          </h4>
+          <dl className="space-y-1.5">
+            <DetailRow
+              label="Partido"
+              value={
+                enc.perfil?.partido?.afiliado
+                  ? enc.perfil.partido.cual || "Sí"
+                  : enc.perfil?.partido?.afiliado === false
+                    ? "No afiliado"
+                    : undefined
+              }
+            />
+            <DetailRow
+              label="ONG"
+              value={
+                enc.perfil?.ong?.participa
+                  ? enc.perfil.ong.cual || "Sí"
+                  : enc.perfil?.ong?.participa === false
+                    ? "No participa"
+                    : undefined
+              }
+            />
+            <DetailRow label="Ocupación" value={enc.perfil?.ocupacion} />
+          </dl>
+        </div>
+      )}
+
       <div>
         <h4 className="font-montserrat font-semibold text-white mb-3">
           Prioridades
@@ -1348,6 +1448,21 @@ function EncuestaDetail({ enc }: { enc: Encuesta }) {
           <DirigenteItem label="Argentina (cuestiona)" data={enc.dirigentes?.argDisgustar} />
         </div>
       </div>
+
+      {Array.isArray(enc.ejesEncuentro) && enc.ejesEncuentro.length > 0 && (
+        <div>
+          <h4 className="font-montserrat font-semibold text-white mb-3">
+            Ejes del encuentro
+          </h4>
+          <ol className="list-decimal list-inside space-y-1">
+            {enc.ejesEncuentro.map((id: string, i: number) => (
+              <li key={i} className="text-gray-300">
+                {EJES_ENCUENTRO_LABELS[id] || id}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {enc.otraPreocupacion && (
         <div>

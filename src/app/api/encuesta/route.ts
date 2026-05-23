@@ -71,6 +71,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (
+      encuentroId === "e2" &&
+      (!Array.isArray(body.ejesEncuentro) || body.ejesEncuentro.length < 3)
+    ) {
+      return NextResponse.json(
+        { error: "Faltan los 3 ejes del 2do encuentro" },
+        { status: 400 }
+      );
+    }
+
     const collection = db.collection("encuestas");
 
     const mail = personal.mail.trim().toLowerCase();

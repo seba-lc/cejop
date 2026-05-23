@@ -73,6 +73,22 @@ export async function GET(req: NextRequest) {
       .slice(0, 5)
       .map(([id, count]) => ({ id, count }));
 
+    // Ejes del encuentro (E2)
+    const ejesCounts: Record<string, number> = {};
+    for (const enc of allEncuestas) {
+      if (Array.isArray(enc.ejesEncuentro)) {
+        for (const ejeId of enc.ejesEncuentro) {
+          if (typeof ejeId === "string" && ejeId) {
+            ejesCounts[ejeId] = (ejesCounts[ejeId] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    const topEjesEncuentro = Object.entries(ejesCounts)
+      .sort(([, a], [, b]) => b - a)
+      .map(([id, count]) => ({ id, count }));
+
     // Localidad distribution
     const localidadCounts: Record<string, number> = {};
     for (const enc of allEncuestas) {
@@ -89,6 +105,7 @@ export async function GET(req: NextRequest) {
       stats: {
         totalRespuestas,
         topPrioridades,
+        topEjesEncuentro,
         localidades,
       },
       filteredCount: encuestas.length,

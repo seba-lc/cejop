@@ -45,6 +45,81 @@ const PRIORITY_TOPICS = [
 
 const REQUIRED_PRIORITIES = 3;
 
+const ENCUENTRO_EJES = [
+  {
+    id: "reforma-electoral",
+    label: "Reforma electoral",
+    eje: "Reforma electoral, representación política y fortalecimiento democrático",
+    question:
+      "Boleta Única vs. sistema de acoples: ¿qué cambia realmente en la representación política y cómo impacta en Tucumán?",
+  },
+  {
+    id: "juventud-poder",
+    label: "Juventud y participación",
+    eje: "Juventud, participación política y nuevas formas de construir poder",
+    question:
+      "¿Qué lugar tienen hoy los jóvenes dentro de las estructuras políticas y legislativas actuales?",
+  },
+  {
+    id: "modernizacion",
+    label: "Modernización institucional",
+    eje: "Modernización, eficiencia y orden institucional",
+    question:
+      "¿Cómo se ordena y actualiza el sistema normativo cuando muchas leyes se superponen o contradicen entre sí?",
+  },
+  {
+    id: "transparencia",
+    label: "Transparencia legislativa",
+    eje: "Transparencia legislativa, control público y acceso a la información",
+    question:
+      "¿Qué tan accesible y transparente es hoy el trabajo legislativo para la ciudadanía?",
+  },
+  {
+    id: "asesores",
+    label: "Asesores legislativos",
+    eje: "El rol de los asesores legislativos: funciones, límites y control institucional",
+    question:
+      "¿Qué hacen realmente los asesores legislativos y cómo funciona el trabajo técnico detrás de las leyes?",
+  },
+  {
+    id: "cercania",
+    label: "Cercanía con la ciudadanía",
+    eje: "Política e instituciones: representación y cercanía con la ciudadanía",
+    question:
+      "¿Cómo puede la Legislatura acercarse más a los problemas reales de la sociedad?",
+  },
+  {
+    id: "consensos",
+    label: "Consensos en polarización",
+    eje: "Democracia, debate y construcción de consensos en tiempos de crisis",
+    question:
+      "¿Cómo se construyen acuerdos políticos en un contexto de polarización permanente?",
+  },
+  {
+    id: "redes",
+    label: "Política y redes sociales",
+    eje: "Política, comunicación y el impacto de las redes sociales",
+    question:
+      "¿Las redes sociales mejoraron el debate político o lo volvieron más superficial?",
+  },
+  {
+    id: "transformacion",
+    label: "Legislatura y transformación",
+    eje: "La Legislatura como espacio de transformación social y construcción de leyes",
+    question:
+      "¿Qué capacidad real tiene hoy la Legislatura para transformar la vida cotidiana de las personas?",
+  },
+  {
+    id: "futuro-tuc",
+    label: "Futuro de Tucumán",
+    eje: "El futuro político e institucional de Tucumán",
+    question:
+      "¿Qué desafíos políticos e institucionales enfrenta Tucumán en los próximos años?",
+  },
+];
+
+const REQUIRED_EJES = 3;
+
 type FormData = {
   nombre: string;
   telefono: string;
@@ -52,6 +127,11 @@ type FormData = {
   edad: string;
   fueAlPrimero: "si" | "no" | "";
   localidad: string;
+  partidoAfiliado: "si" | "no" | "";
+  partidoCual: string;
+  ongParticipa: "si" | "no" | "";
+  ongCual: string;
+  ocupacion: string;
   dirigenteTucGustar: string;
   dirigenteTucGustarPorque: string;
   dirigenteArgGustar: string;
@@ -70,6 +150,11 @@ const initialForm: FormData = {
   edad: "",
   fueAlPrimero: "",
   localidad: "",
+  partidoAfiliado: "",
+  partidoCual: "",
+  ongParticipa: "",
+  ongCual: "",
+  ocupacion: "",
   dirigenteTucGustar: "",
   dirigenteTucGustarPorque: "",
   dirigenteArgGustar: "",
@@ -103,6 +188,11 @@ const steps = [
     id: "profundidad",
     title: "Profundicemos",
     subtitle: "Contanos qué pensás sobre las prioridades que elegiste",
+  },
+  {
+    id: "ejesEncuentro",
+    title: "Ejes del 2do encuentro",
+    subtitle: "Elegí los 3 ejes que más te interesan del encuentro",
   },
   {
     id: "cierre",
@@ -142,6 +232,8 @@ export default function EncuestaE2Page() {
   const [priorities, setPriorities] = useState<string[]>([]);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [priorityResponses, setPriorityResponses] = useState<Record<string, string>>({});
+  const [ejesEncuentro, setEjesEncuentro] = useState<string[]>([]);
+  const [expandedEje, setExpandedEje] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState(VIDEO_URL);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
@@ -200,15 +292,25 @@ export default function EncuestaE2Page() {
     switch (currentStep) {
       case 0:
         return true;
-      case 1:
+      case 1: {
+        const partidoOk =
+          form.partidoAfiliado === "no" ||
+          (form.partidoAfiliado === "si" && !!form.partidoCual.trim());
+        const ongOk =
+          form.ongParticipa === "no" ||
+          (form.ongParticipa === "si" && !!form.ongCual.trim());
         return !!(
           form.nombre.trim() &&
           form.telefono.trim() &&
           form.mail.trim() &&
           form.edad.trim() &&
           (form.fueAlPrimero === "si" || form.fueAlPrimero === "no") &&
-          form.localidad.trim()
+          form.localidad.trim() &&
+          partidoOk &&
+          ongOk &&
+          form.ocupacion.trim()
         );
+      }
       case 2:
         return !!(form.dirigenteTucGustar.trim() && form.dirigenteArgGustar.trim());
       case 3:
@@ -218,6 +320,8 @@ export default function EncuestaE2Page() {
       case 5:
         return true;
       case 6:
+        return ejesEncuentro.length === REQUIRED_EJES;
+      case 7:
         return true;
       default:
         return false;
@@ -255,6 +359,17 @@ export default function EncuestaE2Page() {
         edad: parseInt(form.edad),
         localidad: form.localidad.trim(),
       },
+      perfil: {
+        partido: {
+          afiliado: form.partidoAfiliado === "si",
+          cual: form.partidoAfiliado === "si" ? form.partidoCual.trim() : "",
+        },
+        ong: {
+          participa: form.ongParticipa === "si",
+          cual: form.ongParticipa === "si" ? form.ongCual.trim() : "",
+        },
+        ocupacion: form.ocupacion.trim(),
+      },
       dirigentes: {
         tucGustar: { nombre: form.dirigenteTucGustar.trim(), porque: form.dirigenteTucGustarPorque.trim() },
         argGustar: { nombre: form.dirigenteArgGustar.trim(), porque: form.dirigenteArgGustarPorque.trim() },
@@ -265,6 +380,7 @@ export default function EncuestaE2Page() {
       profundidad: Object.fromEntries(
         priorities.map((id) => [id, (priorityResponses[id] || "").trim()])
       ),
+      ejesEncuentro,
       otraPreocupacion: form.otraPreocupacion.trim(),
     };
 
@@ -460,6 +576,17 @@ export default function EncuestaE2Page() {
                           .
                         </p>
                       </div>
+
+                      <div className="border-l-2 border-cejop-blue-light pl-4">
+                        <p className="font-source text-[15px] text-white/80 leading-relaxed">
+                          Completá el formulario con la mayor información posible:
+                          eso nos ayuda a conocer mejor tu perfil y{" "}
+                          <strong className="text-white">
+                            fortalece tu postulación al CEJOP
+                          </strong>
+                          .
+                        </p>
+                      </div>
                     </div>
 
                     <p className="font-source text-xs text-white/40 leading-relaxed mb-10">
@@ -572,17 +699,111 @@ export default function EncuestaE2Page() {
                             placeholder="Tu ciudad"
                             required
                           />
+
+                          <div className="pt-4 border-t border-white/10" />
+
+                          <RadioGroup
+                            label="¿Estás afiliado a algún partido político?"
+                            name="partidoAfiliado"
+                            value={form.partidoAfiliado}
+                            onChange={(v) =>
+                              setForm({
+                                ...form,
+                                partidoAfiliado: v as "si" | "no",
+                                partidoCual: v === "no" ? "" : form.partidoCual,
+                              })
+                            }
+                            options={[
+                              { value: "si", label: "Sí" },
+                              { value: "no", label: "No" },
+                            ]}
+                            required
+                          />
+                          <AnimatePresence initial={false}>
+                            {form.partidoAfiliado === "si" && (
+                              <motion.div
+                                key="partido-cual"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="pt-1">
+                                  <Field
+                                    label="¿Cuál?"
+                                    name="partidoCual"
+                                    value={form.partidoCual}
+                                    onChange={handleChange}
+                                    placeholder="Nombre del partido"
+                                    required
+                                  />
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          <RadioGroup
+                            label="¿Participás en alguna ONG, fundación o agrupación civil?"
+                            name="ongParticipa"
+                            value={form.ongParticipa}
+                            onChange={(v) =>
+                              setForm({
+                                ...form,
+                                ongParticipa: v as "si" | "no",
+                                ongCual: v === "no" ? "" : form.ongCual,
+                              })
+                            }
+                            options={[
+                              { value: "si", label: "Sí" },
+                              { value: "no", label: "No" },
+                            ]}
+                            required
+                          />
+                          <AnimatePresence initial={false}>
+                            {form.ongParticipa === "si" && (
+                              <motion.div
+                                key="ong-cual"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="pt-1">
+                                  <Field
+                                    label="¿Cuál?"
+                                    name="ongCual"
+                                    value={form.ongCual}
+                                    onChange={handleChange}
+                                    placeholder="Nombre de la organización"
+                                    required
+                                  />
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          <TextArea
+                            label="¿A qué te dedicás?"
+                            name="ocupacion"
+                            value={form.ocupacion}
+                            onChange={handleChange}
+                            placeholder="Contanos brevemente: si estudiás (qué carrera), si trabajás (de qué y dónde), o ambos."
+                            rows={3}
+                            required
+                          />
                         </>
                       )}
 
                       {currentStep === 2 && (
                         <>
                           <Field
-                            label="¿Qué dirigente de Tucumán te gusta más?"
+                            label="¿Qué dirigente de Tucumán te gusta más? (Nombre y apellido)"
                             name="dirigenteTucGustar"
                             value={form.dirigenteTucGustar}
                             onChange={handleChange}
-                            placeholder="Nombre del dirigente"
+                            placeholder="Nombre y apellido del dirigente"
                             required
                           />
                           <TextArea
@@ -594,11 +815,11 @@ export default function EncuestaE2Page() {
                           />
                           <div className="pt-2" />
                           <Field
-                            label="¿Qué dirigente de Argentina te gusta más?"
+                            label="¿Qué dirigente de Argentina te gusta más? (Nombre y apellido)"
                             name="dirigenteArgGustar"
                             value={form.dirigenteArgGustar}
                             onChange={handleChange}
-                            placeholder="Nombre del dirigente"
+                            placeholder="Nombre y apellido del dirigente"
                             required
                           />
                           <TextArea
@@ -614,11 +835,11 @@ export default function EncuestaE2Page() {
                       {currentStep === 3 && (
                         <>
                           <Field
-                            label="¿Qué dirigente de Tucumán te gusta menos?"
+                            label="¿Qué dirigente de Tucumán te gusta menos? (Nombre y apellido)"
                             name="dirigenteTucDisgustar"
                             value={form.dirigenteTucDisgustar}
                             onChange={handleChange}
-                            placeholder="Nombre del dirigente"
+                            placeholder="Nombre y apellido del dirigente"
                             required
                           />
                           <TextArea
@@ -630,11 +851,11 @@ export default function EncuestaE2Page() {
                           />
                           <div className="pt-2" />
                           <Field
-                            label="¿Qué dirigente de Argentina te gusta menos?"
+                            label="¿Qué dirigente de Argentina te gusta menos? (Nombre y apellido)"
                             name="dirigenteArgDisgustar"
                             value={form.dirigenteArgDisgustar}
                             onChange={handleChange}
-                            placeholder="Nombre del dirigente"
+                            placeholder="Nombre y apellido del dirigente"
                             required
                           />
                           <TextArea
@@ -859,6 +1080,147 @@ export default function EncuestaE2Page() {
                       )}
 
                       {currentStep === 6 && (
+                        <>
+                          <p className="font-source text-[13px] text-white/60 leading-relaxed -mt-2 mb-4">
+                            Vamos a trabajar varios ejes durante el 2do encuentro.
+                            Tocá uno para ver de qué se trata y elegí los{" "}
+                            <strong className="text-white/80">3 que más te interesan</strong>.
+                          </p>
+
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              {[1, 2, 3].map((n) => {
+                                const eje = ejesEncuentro[n - 1]
+                                  ? ENCUENTRO_EJES.find((e) => e.id === ejesEncuentro[n - 1])
+                                  : null;
+                                return (
+                                  <div key={n} className="flex items-center gap-1.5 transition-all duration-300">
+                                    <div
+                                      className={`w-6 h-6 flex items-center justify-center text-[10px] font-montserrat font-bold ${
+                                        eje
+                                          ? "bg-cejop-blue text-white"
+                                          : "border border-white/20 text-white/30"
+                                      }`}
+                                    >
+                                      {n}
+                                    </div>
+                                    {eje && (
+                                      <span className="font-source text-[11px] text-white/50 hidden sm:inline">
+                                        {eje.label}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {ejesEncuentro.length > 0 && (
+                              <button
+                                onClick={() => { setEjesEncuentro([]); setExpandedEje(null); }}
+                                className="font-source text-xs text-white/30 hover:text-white/60 transition-colors"
+                              >
+                                Reiniciar
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="relative">
+                            <div
+                              className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1 scroll-smooth"
+                              onScroll={(e) => {
+                                const el = e.currentTarget;
+                                const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20;
+                                setScrolledToBottom(atBottom);
+                              }}
+                            >
+                              {ENCUENTRO_EJES.map((eje) => {
+                                const index = ejesEncuentro.indexOf(eje.id);
+                                const isSelected = index !== -1;
+                                const isExpanded = expandedEje === eje.id;
+                                const isFull = ejesEncuentro.length >= REQUIRED_EJES;
+                                const isDisabled = !isSelected && isFull;
+
+                                return (
+                                  <div key={eje.id}>
+                                    <button
+                                      onClick={() => {
+                                        if (isSelected) {
+                                          setEjesEncuentro((prev) => prev.filter((id) => id !== eje.id));
+                                          setExpandedEje(null);
+                                        } else if (!isDisabled) {
+                                          setExpandedEje(isExpanded ? null : eje.id);
+                                        }
+                                      }}
+                                      disabled={isDisabled}
+                                      className={`w-full text-left px-3 py-2.5 border transition-all duration-200 flex items-center justify-between ${
+                                        isSelected
+                                          ? "border-cejop-blue bg-cejop-blue/15 text-white"
+                                          : isExpanded
+                                            ? "border-white/25 bg-white/[0.08] text-white"
+                                            : isDisabled
+                                              ? "border-white/5 bg-white/[0.02] text-white/20 cursor-not-allowed"
+                                              : "border-white/10 bg-white/[0.04] text-white/60 hover:border-white/20"
+                                      }`}
+                                    >
+                                      <span className="font-source text-[13px] leading-tight">
+                                        {eje.label}
+                                      </span>
+                                      {isSelected ? (
+                                        <span className="shrink-0 w-5 h-5 bg-cejop-blue text-white text-[10px] font-montserrat font-bold flex items-center justify-center">
+                                          {index + 1}
+                                        </span>
+                                      ) : !isDisabled ? (
+                                        <ChevronDown
+                                          size={14}
+                                          className={`shrink-0 text-white/30 transition-transform duration-200 ${
+                                            isExpanded ? "rotate-180" : ""
+                                          }`}
+                                        />
+                                      ) : null}
+                                    </button>
+
+                                    <AnimatePresence>
+                                      {isExpanded && !isSelected && (
+                                        <motion.div
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: "auto", opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2 }}
+                                          className="overflow-hidden"
+                                        >
+                                          <div className="border border-t-0 border-white/15 bg-white/[0.05] px-4 py-3">
+                                            <p className="font-encode text-[10px] font-semibold tracking-[0.2em] uppercase text-cejop-blue-light mb-2">
+                                              {eje.eje}
+                                            </p>
+                                            <p className="font-source text-[13px] text-white/70 leading-relaxed mb-3">
+                                              {eje.question}
+                                            </p>
+                                            <button
+                                              onClick={() => {
+                                                setEjesEncuentro((prev) => [...prev, eje.id]);
+                                                setExpandedEje(null);
+                                              }}
+                                              className="w-full py-2 bg-cejop-blue/80 hover:bg-cejop-blue text-white font-montserrat font-bold text-xs tracking-wide transition-colors"
+                                            >
+                                              Elegir como eje {ejesEncuentro.length + 1}
+                                            </button>
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div
+                              className={`pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-cejop-dark via-cejop-dark/60 to-transparent transition-opacity duration-300 ${
+                                scrolledToBottom ? "opacity-0" : "opacity-100"
+                              }`}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {currentStep === 7 && (
                         <>
                           <TextArea
                             label="¿Hay alguna temática que no esté en la lista y que considerés prioritaria?"
