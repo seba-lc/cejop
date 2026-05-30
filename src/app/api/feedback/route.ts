@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { sendGraciasFeedback } from "@/lib/send-email";
+import { getEncuentroActivo, getEncuentro, colName } from "@/lib/encuentro-config";
 
+// POST /api/feedback
+// Endpoint dinámico: escribe el feedback contra el encuentro ACTIVO
+// (server-authoritative — el encuentro lo resuelve el server, no el cliente).
+// Así un único path/QR sirve para cualquier encuentro sin tocar código.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -36,15 +41,16 @@ export async function POST(req: NextRequest) {
     }
 
     const db = await getDb();
-    const collection = db.collection("feedback_encuentro_1");
+    const encuentroId = await getEncuentroActivo();
+    const collection = db.collection(colName("feedback", encuentroId));
 
     const existing = await collection.findOne({ mail });
     if (existing) {
+      const ordinal = getEncuentro(encuentroId).ordinal;
       return NextResponse.json(
         {
           duplicate: true,
-          message:
-            "Ya recibimos tu feedback sobre el primer encuentro. Tu respuesta quedó registrada correctamente.",
+          message: `Ya recibimos tu feedback sobre el ${ordinal} encuentro. Tu respuesta quedó registrada correctamente.`,
         },
         { status: 409 }
       );
@@ -59,31 +65,31 @@ export async function POST(req: NextRequest) {
       proximoOtro: typeof body.proximoOtro === "string" ? body.proximoOtro.trim() : "",
       recomendaria: body.recomendaria,
       origenPolitico: typeof body.origenPolitico === "string" ? body.origenPolitico.trim() : "",
-      encuentro: "e1",
+      encuentro: encuentroId,
       createdAt: new Date(),
     };
 
     const result = await collection.insertOne(document);
 
     // Disparar email de gracias. Busca el nombre en encuestas si hay match,
-    // si no manda genérico. El helper tiene dedup propio.
+    // si no manda genérico. El helper tiene dedup propio (campaign + mail).
     try {
       const encuesta = await db
         .collection("encuestas")
-        .findOne({ encuentroId: "e1", "personal.mail": mail });
+        .findOne({ encuentroId, "personal.mail": mail });
       const nombre = encuesta?.personal?.nombre || "";
-      await sendGraciasFeedback({ mail, nombre, encuentroId: "e1" });
+      await sendGraciasFeedback({ mail, nombre, encuentroId });
     } catch (err) {
       console.error("Error enviando email de gracias por feedback:", err);
       // No rompe la respuesta al usuario.
     }
 
     return NextResponse.json(
-      { success: true, id: result.insertedId },
+      { success: true, id: result.insertedId, encuentro: encuentroId },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error saving feedback-e1:", error);
+    console.error("Error saving feedback:", error);
     return NextResponse.json(
       { error: "Error al guardar el feedback" },
       { status: 500 }

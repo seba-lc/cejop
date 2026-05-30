@@ -22,6 +22,12 @@ const NEXT_TOPICS = [
 
 const MAX_NEXT_TOPICS = 3;
 
+type EncuentroInfo = {
+  id: string;
+  ordinal: string;
+  titulo: string;
+};
+
 type FormData = {
   mail: string;
   nps: number | null;
@@ -79,7 +85,11 @@ const steps = [
   },
 ];
 
-const COOKIE_NAME = "cejop_feedback_e1_done";
+// Nombre de cookie por encuentro: quien respondió el e1 no debe quedar
+// bloqueado para responder el e2 (y viceversa).
+function cookieNameFor(encuentroId: string) {
+  return `cejop_feedback_${encuentroId}_done`;
+}
 
 const introItem = {
   hidden: { opacity: 0, y: 14 },
@@ -100,7 +110,7 @@ function setCookie(name: string, value: string, days: number) {
   document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
 }
 
-export default function FeedbackE1Page() {
+export default function FeedbackPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -109,14 +119,34 @@ export default function FeedbackE1Page() {
   const [form, setForm] = useState<FormData>(initialForm);
   const [videoSrc, setVideoSrc] = useState(VIDEO_URL);
   const [videoReady, setVideoReady] = useState(false);
+  const [encuentro, setEncuentro] = useState<EncuentroInfo | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Encuentro activo → define copy, cookie y a qué colección va el feedback.
   useEffect(() => {
-    // Si ya completó antes (cookie presente), saltamos directo a la
-    // misma pantalla de "Gracias por responder".
-    const cookie = getCookie(COOKIE_NAME);
-    if (cookie) setSubmitted(true);
+    fetch("/api/encuentro-activo")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.id) {
+          setEncuentro({
+            id: data.id,
+            ordinal: data.ordinal || "",
+            titulo: data.titulo || "",
+          });
+        }
+      })
+      .catch(() => {
+        /* sin encuentro: el form igual funciona, server resuelve el activo */
+      });
   }, []);
+
+  // Si ya completó el feedback de ESTE encuentro (cookie presente), saltamos
+  // directo a la pantalla de "Gracias por responder".
+  useEffect(() => {
+    if (!encuentro) return;
+    const cookie = getCookie(cookieNameFor(encuentro.id));
+    if (cookie) setSubmitted(true);
+  }, [encuentro]);
 
   // Safety: no dejar al usuario esperando más de 5s si el video no llega
   useEffect(() => {
@@ -217,11 +247,10 @@ export default function FeedbackE1Page() {
       proximoOtro: form.proximoOtro.trim(),
       recomendaria: form.recomendaria,
       origenPolitico: form.origenPolitico.trim(),
-      encuentro: "e1",
     };
 
     try {
-      const res = await fetch("/api/feedback-e1", {
+      const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -229,10 +258,12 @@ export default function FeedbackE1Page() {
 
       const data = await res.json();
 
+      const doneCookie = cookieNameFor(encuentro?.id || data?.encuentro || "e1");
+
       // Duplicado: backend no guarda nada. Mostramos la misma pantalla
       // de éxito para que el usuario no note la diferencia.
       if (res.status === 409 && data.duplicate) {
-        setCookie(COOKIE_NAME, form.mail.trim(), 90);
+        setCookie(doneCookie, form.mail.trim(), 90);
         setSubmitted(true);
         return;
       }
@@ -241,7 +272,7 @@ export default function FeedbackE1Page() {
         throw new Error(data.error || "Error al enviar");
       }
 
-      setCookie(COOKIE_NAME, form.mail.trim(), 90);
+      setCookie(doneCookie, form.mail.trim(), 90);
       setSubmitted(true);
     } catch (err) {
       setSubmitError(
@@ -258,6 +289,14 @@ export default function FeedbackE1Page() {
   const isLastStep = currentStep === steps.length - 1;
   const formSteps = steps.length - 1;
   const progress = isIntro ? 0 : (currentStep / formSteps) * 100;
+
+  // Copy del intro, derivado del encuentro activo (con fallbacks neutros).
+  const introTag = encuentro?.ordinal
+    ? `${encuentro.ordinal} encuentro · CEJOP Tucumán`
+    : "CEJOP Tucumán";
+  const introLinea = encuentro?.ordinal
+    ? `Estuviste en el ${encuentro.ordinal} CEJOP${encuentro.titulo ? ` — ${encuentro.titulo}` : ""}. Tu opinión define cómo armamos los próximos encuentros del año.`
+    : "Tu opinión define cómo armamos los próximos encuentros del año.";
 
   return (
     <main className="relative min-h-[100dvh] flex flex-col bg-cejop-dark overflow-hidden">
@@ -377,7 +416,7 @@ export default function FeedbackE1Page() {
                       variants={introItem}
                       className="inline-block font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3"
                     >
-                      Primer encuentro · CEJOP Tucumán
+                      {introTag}
                     </motion.span>
 
                     <motion.h1
@@ -393,9 +432,7 @@ export default function FeedbackE1Page() {
                         className="border-l-2 border-white/20 pl-4"
                       >
                         <p className="font-source text-[15px] text-white/80 leading-relaxed">
-                          Estuviste en la Mesa Panel de Intendentes. Tu
-                          opinión define cómo armamos los próximos encuentros
-                          del año.
+                          {introLinea}
                         </p>
                       </motion.div>
 
