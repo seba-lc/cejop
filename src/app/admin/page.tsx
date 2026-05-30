@@ -1553,7 +1553,9 @@ function TabConfirmados({ encuentroId }: { encuentroId: "e1" | "e2" }) {
   }, [search, filter, encuentroId]);
 
   useEffect(() => {
-    setLoading(true);
+    // Solo el primer fetch muestra el spinner de página. Los refetch por
+    // búsqueda/filtro actualizan la lista en su lugar SIN desmontar el input
+    // (si no, el campo pierde el foco en cada tecla y parece que recarga).
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
@@ -2229,7 +2231,9 @@ function TabAsistentes({ encuentroId }: { encuentroId: "e1" | "e2" }) {
   }, [search, tipo, encuentroId]);
 
   useEffect(() => {
-    setLoading(true);
+    // Solo el primer fetch muestra el spinner de página. Los refetch por
+    // búsqueda/filtro actualizan la lista en su lugar SIN desmontar el input
+    // (si no, el campo pierde el foco en cada tecla y parece que recarga).
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
@@ -3104,7 +3108,9 @@ function TabPendientes({ encuentroId }: { encuentroId: "e1" | "e2" }) {
   }, [search, estado, encuentroId]);
 
   useEffect(() => {
-    setLoading(true);
+    // Solo el primer fetch muestra el spinner de página. Los refetch por
+    // búsqueda/filtro actualizan la lista en su lugar SIN desmontar el input
+    // (si no, el campo pierde el foco en cada tecla y parece que recarga).
     fetchData().finally(() => setLoading(false));
   }, [fetchData]);
 
