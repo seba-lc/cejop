@@ -44,6 +44,29 @@ type ScreenState =
 
 type IdentifyMethod = "telefono" | "email";
 
+type EncuentroInfo = {
+  ordinal: string;
+  fecha: string;
+  fechaLarga: string;
+  titulo: string;
+};
+
+// Fallback si el endpoint no responde: muestra copy neutro sin ordinal fijo.
+const ENCUENTRO_FALLBACK: EncuentroInfo = {
+  ordinal: "",
+  fecha: "",
+  fechaLarga: "",
+  titulo: "",
+};
+
+// "2026-05-30" → "30/5/2026". Devuelve "" si la fecha no es válida.
+function formatFechaCorta(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return "";
+  const [, anio, mes, dia] = m;
+  return `${parseInt(dia, 10)}/${parseInt(mes, 10)}/${anio}`;
+}
+
 export default function AcreditacionPage() {
   const [screen, setScreen] = useState<ScreenState>({ kind: "identify" });
   const [method, setMethod] = useState<IdentifyMethod>("telefono");
@@ -56,11 +79,31 @@ export default function AcreditacionPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [videoSrc, setVideoSrc] = useState(VIDEO_URL);
   const [videoReady, setVideoReady] = useState(false);
+  const [encuentro, setEncuentro] = useState<EncuentroInfo>(ENCUENTRO_FALLBACK);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setVideoReady(true), 5000);
     return () => clearTimeout(t);
+  }, []);
+
+  // Encuentro activo → copy dinámico (ordinal, fecha, título).
+  useEffect(() => {
+    fetch("/api/encuentro-activo")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.ordinal) {
+          setEncuentro({
+            ordinal: data.ordinal,
+            fecha: data.fecha || "",
+            fechaLarga: data.fechaLarga || "",
+            titulo: data.titulo || "",
+          });
+        }
+      })
+      .catch(() => {
+        /* fallback ya seteado */
+      });
   }, []);
 
   useEffect(() => {
@@ -281,12 +324,17 @@ export default function AcreditacionPage() {
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
                 <span className="inline-block font-encode text-[11px] font-semibold tracking-[0.3em] uppercase text-cejop-blue-light mb-6 border-l-2 border-cejop-blue pl-3">
-                  Acreditación · 18/4/2026
+                  Acreditación{formatFechaCorta(encuentro.fecha) ? ` · ${formatFechaCorta(encuentro.fecha)}` : ""}
                 </span>
 
                 <h1 className="font-montserrat font-black text-3xl sm:text-4xl text-white leading-tight mb-3">
-                  Bienvenido/a al primer CEJOP
+                  Bienvenido/a al {encuentro.ordinal ? `${encuentro.ordinal} ` : ""}CEJOP
                 </h1>
+                {encuentro.titulo ? (
+                  <p className="font-encode text-[13px] font-semibold tracking-[0.15em] uppercase text-cejop-blue-light mb-4">
+                    {encuentro.titulo}
+                  </p>
+                ) : null}
                 <p className="font-source text-[15px] text-white/70 leading-relaxed mb-8">
                   {method === "telefono"
                     ? "Ingresá tu teléfono para identificarte."
@@ -586,7 +634,7 @@ export default function AcreditacionPage() {
                 <p className="font-source text-[15px] text-white/80 leading-relaxed max-w-sm mx-auto mb-8">
                   {screen.tipo === "confirmado"
                     ? "Estás confirmado/a. Pasá a la sala, el encuentro está por empezar."
-                    : "Pasá a la sala. Gracias por ser parte del primer CEJOP."}
+                    : `Pasá a la sala. Gracias por ser parte del ${encuentro.ordinal ? `${encuentro.ordinal} ` : ""}CEJOP.`}
                 </p>
 
                 <button

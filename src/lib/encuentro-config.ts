@@ -39,7 +39,7 @@ export const ENCUENTROS: Record<EncuentroId, EncuentroConfig> = {
     ordinal: "2do",
     fecha: "2026-05-30",
     fechaLarga: "sábado 30 de mayo de 2026",
-    titulo: "2do encuentro CEJOP",
+    titulo: "Poder Legislativo",
   },
 };
 
